@@ -3,7 +3,7 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║           INTERBANK SETTLEMENT TERMINAL — ENGINE v3.0                    ║
-║           Build 2026.05.20 | Protocol: SWIFT-GPI/MT103                   ║
+║           Build 2026.05.20 | Protocol: BANK-SERVER/MT103                   ║
 ║                                                                          ║
 ║   [ SIMULATION / DEMONSTRATION TOOL ONLY ]                               ║
 ║   No real banking transactions are performed by this software.           ║
@@ -29,7 +29,7 @@ CONFIG = {
     "beneficiary_name": "JOHN DOE",
     "currency": "EUR",
     "iban": "GB29NWBK60161331926819",
-    "swift_bic": "HSBCGB2LXXX",
+    "bank_server_code": "HSBCGB2LXXX",
     "branch_code": "601613",
     "country": "UNITED KINGDOM",
     "account_type": "CORPORATE PREMIUM",
@@ -257,7 +257,7 @@ def get_masked_input(prompt=""):
 def generate_trn_entry():
     """Generate a realistic TRN entry with full details."""
     bank_info = random.choice(BANK_REGISTRY)
-    bank_name, swift, country = bank_info
+    bank_name, bic_code, country = bank_info
     trn = gen_ref("TRN")
     amount = random.randint(100_000, 25_000_000)
     txn_type = random.choice(TXN_TYPES)
@@ -266,7 +266,7 @@ def generate_trn_entry():
     return {
         "trn": trn,
         "bank": bank_name,
-        "swift": swift,
+        "bank_code": bic_code,
         "country": country,
         "amount": amount,
         "type": txn_type,
@@ -294,7 +294,7 @@ def phase_boot():
     print(boot_art)
     print(f"  {S.DM}{'─'*68}{S.RST}")
     print(f"  {S.W}{S.BD}  GLOBAL INTERBANK SETTLEMENT NETWORK{S.RST}")
-    print(f"  {S.DM}  Protocol: SWIFT-GPI/MT103 | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
+    print(f"  {S.DM}  Protocol: BANK-SERVER/MT103 | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
     print(f"  {S.DM}{'─'*68}{S.RST}\n")
     time.sleep(1)
 
@@ -304,7 +304,7 @@ def phase_boot():
     boot_items = [
         ("Kernel", "Loading secure kernel module v4.19.2-interbank"),
         ("Crypto", "Initializing OpenSSL 3.1.4 / LibreSSL 3.8.1"),
-        ("Net", "Binding to SWIFT Network Interface (SWIFTNet Link 7.4)"),
+        ("Net", "Binding to Bank Server Network Interface (BankNet Core Link 7.4)"),
         ("HSM", "Hardware Security Module handshake (Thales Luna 7)"),
         ("PKI", "Loading X.509 certificate chain (4096-bit RSA)"),
         ("Auth", "Starting PAM authentication daemon"),
@@ -397,7 +397,7 @@ def phase_network():
         (1, "LOCAL-GATEWAY", "ENTRY"),
         (2, "ISP-CORE-ROUTER", "RELAY"),
         (3, "EU-BACKBONE-NODE-7", "TRUNK"),
-        (4, "SWIFT-PROXY-BRUSSELS", "SWIFT"),
+        (4, "BANK-PROXY-BRUSSELS", "BANK-SRV"),
         (5, "INTERBANK-CORE-LDN", "CORE"),
         (6, "SETTLEMENT-ENGINE-A", "TARGET"),
     ]
@@ -408,14 +408,14 @@ def phase_network():
         time.sleep(0.2)
 
     print()
-    print(f"  {S.DM}  Route: LOCAL → ISP → EU-BACKBONE → SWIFT → CORE → ENGINE{S.RST}")
+    print(f"  {S.DM}  Route: LOCAL → ISP → EU-BACKBONE → BANK-SRV → CORE → ENGINE{S.RST}")
     print(f"  {S.DM}  Total latency: {random.randint(45, 120)}ms | Jitter: <2ms | Loss: 0.00%{S.RST}")
     print()
 
     # Encryption handshake
     spinner("Performing ECDHE key exchange (P-384)", 1.5)
     spinner("Establishing forward-secrecy channel", 1.0)
-    spinner("Loading SWIFT Alliance Lite2 interface", 1.2)
+    spinner("Loading Bank Server Alliance interface", 1.2)
     
     print()
     progress("Secure Tunnel Establishment", duration=2.0, width=35, color=S.G)
@@ -436,7 +436,7 @@ def phase_trn_scan():
     print()
     print(f"  {S.DM}┌──────────────────────────────────────────────────────────────┐{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.W}Mode    :{S.RST} DEEP SCAN (Multi-TRN Parallel Trace)           {S.DM}│{S.RST}")
-    print(f"  {S.DM}│{S.RST} {S.W}Network :{S.RST} SWIFT-GPI + TARGET2 + FEDWIRE + CHAPS          {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.W}Network :{S.RST} BANK-SERVER + TARGET2 + FEDWIRE + CHAPS          {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.W}Range   :{S.RST} Last 72 hours — All jurisdictions               {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.W}Time    :{S.RST} {datestamp()} {ts()}                     {S.DM}│{S.RST}")
     print(f"  {S.DM}└──────────────────────────────────────────────────────────────┘{S.RST}")
@@ -457,7 +457,7 @@ def phase_trn_scan():
     time.sleep(0.5)
 
     scan_nodes = [
-        "SWIFT-GPI Tracker (Brussels)",
+        "BANK-SERVER Tracker (Brussels)",
         "FEDWIRE Real-Time (New York)",
         "TARGET2 Cluster (Frankfurt)",
         "CHAPS Sterling (London)",
@@ -551,7 +551,7 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     # Multi-layer decryption animation
     layers = [
         ("Layer 1/4", "Stripping TLS envelope", 1.5),
-        ("Layer 2/4", "Decoding SWIFT MT103 payload", 2.0),
+        ("Layer 2/4", "Decoding Bank Server MT103 payload", 2.0),
         ("Layer 3/4", "Extracting beneficiary metadata", 1.8),
         ("Layer 4/4", "Reconstructing ledger entry", 2.2),
     ]
@@ -585,7 +585,7 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     reveal_data = [
         ("TRN Reference", trn_input, S.Y),
         ("Message Type", "MT103 (Single Customer Credit Transfer)", S.W),
-        ("Ordering Bank", f"{found_bank} ({CONFIG['swift_bic']})", S.C),
+        ("Ordering Bank", f"{found_bank} ({CONFIG['bank_server_code']})", S.C),
         ("IBAN", CONFIG['iban'], S.C),
         ("Branch", f"{CONFIG['branch_code']} — {CONFIG['country']}", S.W),
         ("Account Type", CONFIG['account_type'], S.W),
@@ -623,7 +623,7 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     print(f"  {S.DM}├{'─'*10}┼{'─'*22}┼{'─'*16}┼{'─'*10}┤{S.RST}")
 
     history_items = [
-        ("05-18", "SWIFT Transfer In", f"+2,450,000 €", "CR"),
+        ("05-18", "Bank Transfer In", f"+2,450,000 €", "CR"),
         ("05-17", "Internal Move", f"+5,100,000 €", "CR"),
         ("05-15", "Wire from MUFG", f"+1,890,000 €", "CR"),
         ("05-14", "Settlement Rev", f"+3,200,000 €", "CR"),
@@ -675,7 +675,7 @@ def phase_routing():
         else:
             break
 
-    swift_code = input(f"  {S.Y}▸ SWIFT/BIC Code        : {S.RST}")
+    bank_code = input(f"  {S.Y}▸ Bank Server Code        : {S.RST}")
     holder_name = ""
     while True:
         holder_name = input(f"  {S.Y}▸ Account Holder Name   : {S.RST}").strip()
@@ -687,10 +687,10 @@ def phase_routing():
             break
 
     # Defaults for optional
-    swift_code = swift_code.strip() or "XXXXXXXXXXX"
+    bank_code = bank_code.strip() or "XXXXXXXXXXX"
 
     print()
-    spinner("Validating SWIFT/BIC against ISO 9362 registry", 2.0)
+    spinner("Validating Bank Server Code against ISO 9362 registry", 2.0)
     multi_spinner("Cross-referencing AML/KYC database", 1.5)
     spinner("Confirming correspondent bank pathway", 1.5)
     print()
@@ -710,7 +710,7 @@ def phase_routing():
     print()
     print(f"  {S.BD}  Bank           : {S.W}{bank_name.upper()}{S.RST}")
     print(f"  {S.BD}  Account        : {S.W}{masked}{S.RST}")
-    print(f"  {S.BD}  SWIFT/BIC      : {S.W}{swift_code.upper()}{S.RST}")
+    print(f"  {S.BD}  Bank Server Code      : {S.W}{bank_code.upper()}{S.RST}")
     print(f"  {S.BD}  Holder         : {S.W}{holder_name.upper()}{S.RST}")
     print(f"  {S.BD}  Correspondent  : {S.W}DEUTSCHE BANK AG (DEUTDEFF){S.RST}")
     print(f"  {S.BD}  AML Check      : {S.G}CLEARED{S.RST}")
@@ -724,7 +724,7 @@ def phase_routing():
         "bank_name": bank_name.upper(),
         "account_no": account_no,
         "masked": masked,
-        "swift_code": swift_code.upper(),
+        "bank_code": bank_code.upper(),
         "holder_name": holder_name.upper(),
     }
 
@@ -743,7 +743,7 @@ def phase_bridge():
 
     # Firewall layers
     firewalls = [
-        ("SWIFT-SANCTIONS-SCREEN", "COMPLIANCE", "Sanctions list cross-check"),
+        ("BANK-SANCTIONS-SCREEN", "COMPLIANCE", "Sanctions list cross-check"),
         ("FED-RESERVE-OFAC", "REGULATORY", "OFAC/SDN clearance verification"),
         ("ECB-OVERSIGHT-NODE", "REGULATORY", "ECB transaction monitoring"),
         ("INTERPOL-I-24/7", "SECURITY", "Financial crime database scan"),
