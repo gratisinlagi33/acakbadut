@@ -334,38 +334,55 @@ def phase_boot():
 # [ PHASE 2: AUTHENTICATION ]
 # =====================================================================
 def phase_auth():
-    """Multi-layer authentication."""
+    """Multi-layer authentication via remote banking gateway."""
     clear()
-    header("AUTHENTICATION GATEWAY", "Level-3 Security Clearance Required")
+    header("AUTHENTICATION GATEWAY", "Remote Banking Server Login")
     print()
-    print(f"  {S.DM}┌─────────────────────────────────────────────────────┐{S.RST}")
-    print(f"  {S.DM}│{S.RST} Timestamp  : {S.W}{ts()}{S.RST} {S.DM}                             │{S.RST}")
-    print(f"  {S.DM}│{S.RST} Protocol   : {S.W}TLS 1.3 / AES-256-GCM-SHA384{S.RST} {S.DM}      │{S.RST}")
-    print(f"  {S.DM}│{S.RST} Session    : {S.W}{gen_session_id()}{S.RST} {S.DM}│{S.RST}")
-    print(f"  {S.DM}└─────────────────────────────────────────────────────┘{S.RST}")
+
+    # Simulate connecting to bank IP
+    fake_ip = f"103.{random.randint(10,99)}.{random.randint(100,255)}.{random.randint(2,254)}"
+    fake_port = random.choice([443, 8443, 9443])
+    session_id = gen_session_id()
+
+    print(f"  {S.DM}┌────────────────────────────────────────────────────────────┐{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Connecting to :{S.RST} {S.W}{S.BD}https://{fake_ip}:{fake_port}/secure/auth{S.RST} {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Host          :{S.RST} {S.W}ibank-gw.bankmandiri.co.id{S.RST}           {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Protocol      :{S.RST} {S.W}TLS 1.3 / AES-256-GCM-SHA384{S.RST}       {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Certificate   :{S.RST} {S.G}VALID{S.RST} (DigiCert Global Root G2)      {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Session       :{S.RST} {S.W}{session_id}{S.RST}       {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Timestamp     :{S.RST} {S.W}{datestamp()} {ts()}{S.RST}          {S.DM}│{S.RST}")
+    print(f"  {S.DM}└────────────────────────────────────────────────────────────┘{S.RST}")
+    print()
+    spinner(f"Establishing secure connection to {fake_ip}", 1.5)
+    print()
+    sep()
     print()
 
     max_attempts = 3
     for attempt in range(max_attempts):
-        username = input(f"  {S.Y}▸ Operator ID : {S.RST}")
-        password = get_masked_input(f"  {S.Y}▸ Access Key  : {S.RST}")
+        # Both username and password are masked with asterisks
+        user_input = get_masked_input(f"  {S.Y}▸ Operator ID : {S.RST}")
+        pass_input = get_masked_input(f"  {S.Y}▸ Access Key  : {S.RST}")
         
         # Verify
-        pw_hash = hashlib.sha256(password.encode()).hexdigest()
-        if username == CREDENTIALS["username"] and pw_hash == CREDENTIALS["password_hash"]:
+        pw_hash = hashlib.sha256(pass_input.encode()).hexdigest()
+        if user_input == CREDENTIALS["username"] and pw_hash == CREDENTIALS["password_hash"]:
             print()
-            spinner("Validating biometric token", 1.5)
+            spinner("Authenticating with remote server", 1.5)
+            spinner("Validating 2FA biometric token", 1.2)
             spinner("Generating ephemeral session key", 1.0)
-            print(f"\n  {S.G}{S.BD}[✓] IDENTITY CONFIRMED — CLEARANCE LEVEL 3 GRANTED{S.RST}\n")
+            print(f"\n  {S.G}{S.BD}[✓] IDENTITY CONFIRMED — ACCESS GRANTED{S.RST}")
+            print(f"  {S.DM}    Server: ibank-gw.bankmandiri.co.id ({fake_ip}){S.RST}\n")
             time.sleep(1)
             return True
         else:
             remaining = max_attempts - attempt - 1
-            print(f"\n  {S.R}[✗] ACCESS DENIED. {remaining} attempt(s) remaining.{S.RST}")
+            print(f"\n  {S.R}[✗] ACCESS DENIED — Remote server rejected credentials.{S.RST}")
             if remaining > 0:
-                print(f"  {S.DM}    Security lockout in {remaining * 10}s if failed.{S.RST}\n")
+                print(f"  {S.DM}    {remaining} attempt(s) remaining before IP blacklist.{S.RST}\n")
     
-    print(f"\n  {S.R}{S.BD}[LOCKED] Terminal disabled. Contact SOC team.{S.RST}")
+    print(f"\n  {S.R}{S.BD}[LOCKED] IP blacklisted by remote server. Terminal disabled.{S.RST}")
+    print(f"  {S.DM}Contact NOC: security@bankmandiri.co.id{S.RST}")
     return False
 
 
