@@ -926,7 +926,7 @@ def phase_settlement(routing_info):
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Bank Route   : {S.W}{routing_info['bank_name']} ({routing_info['masked']}){S.RST}{'':>{28-len(routing_info['bank_name'])-len(routing_info['masked'])}}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Wallet       : {S.C}{wallet[:38]}{S.RST}{'':>{6}}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Amount       : {S.W}{crypto_amt:,.4f} {coin}{S.RST}{'':>{34-len(f'{crypto_amt:,.4f} {coin}')}}{S.R}{S.BD}║{S.RST}")
-    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Status       : {S.R}TRANSACTION CANCELLED — NO FUNDS DEDUCTED{S.RST}{'':>0}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Status       : {S.R}REJECTED — INSUFFICIENT GAS / NODE TIMEOUT{S.RST}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}╚{'═'*60}╝{S.RST}")
     print()
     print(f"  {S.DM}  Connection terminated at {ts()} | Session purged{S.RST}")
