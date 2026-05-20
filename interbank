@@ -904,11 +904,11 @@ def phase_settlement(routing_info):
     time.sleep(0.5)
 
     print()
-    print(f"  {S.R}[✗] CRITICAL: Network handshake timeout — peer unreachable{S.RST}")
+    print(f"  {S.R}[✗] CRITICAL: Smart contract execution reverted by liquidity pool{S.RST}")
     time.sleep(0.4)
-    print(f"  {S.R}[✗] TX DROPPED: Validator quorum not reached — packet voided{S.RST}")
+    print(f"  {S.R}[✗] TX REJECTED: Amount exceeds single-block settlement capacity{S.RST}")
     time.sleep(0.4)
-    print(f"  {S.R}[✗] CANCELLED: Transaction reversed — no funds were transferred{S.RST}")
+    print(f"  {S.R}[✗] DENIED: Receiving exchange compliance module flagged transaction{S.RST}")
     time.sleep(1.5)
 
     # --- Final Failure Report ---
@@ -926,11 +926,12 @@ def phase_settlement(routing_info):
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Bank Route   : {S.W}{routing_info['bank_name']} ({routing_info['masked']}){S.RST}{'':>{28-len(routing_info['bank_name'])-len(routing_info['masked'])}}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Wallet       : {S.C}{wallet[:38]}{S.RST}{'':>{6}}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Amount       : {S.W}{crypto_amt:,.4f} {coin}{S.RST}{'':>{34-len(f'{crypto_amt:,.4f} {coin}')}}{S.R}{S.BD}║{S.RST}")
-    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Status       : {S.R}REJECTED — INSUFFICIENT GAS / NODE TIMEOUT{S.RST}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Status       : {S.R}DECLINED BY EXCHANGE — SETTLEMENT LIMIT EXCEEDED{S.RST}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}╚{'═'*60}╝{S.RST}")
     print()
-    print(f"  {S.DM}  Connection terminated at {ts()} | Session purged{S.RST}")
-    print(f"  {S.DM}  Please retry once network connectivity is restored.{S.RST}")
+    print(f"  {S.DM}  Transaction declined by receiving exchange at {ts()}{S.RST}")
+    print(f"  {S.DM}  Reason: Volume exceeds daily OTC desk processing threshold.{S.RST}")
+    print(f"  {S.DM}  Contact your exchange liaison for manual settlement approval.{S.RST}")
     print()
     input(f"  {S.Y}▸ Press ENTER to close terminal...{S.RST}")
 
