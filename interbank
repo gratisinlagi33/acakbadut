@@ -58,15 +58,15 @@ def _handle_cli_args():
 # [ CONFIGURATION ]
 # =====================================================================
 CONFIG = {
-    "target_bank": "HSBC",
+    "target_bank": "UBS",
     "target_account_last4": "1411",
-    "target_balance_eur": 14_564_000,
+    "target_balance_eur": 49_500_000,
     "beneficiary_name": "JOHN DOE",
     "currency": "EUR",
-    "iban": "GB29NWBK60161331926819",
-    "bank_server_code": "HSBCGB2LXXX",
-    "branch_code": "601613",
-    "country": "UNITED KINGDOM",
+    "iban": "CH93 0076 2011 6238 5295 7",
+    "bank_server_code": "UBSWCHZH80A",
+    "branch_code": "002",
+    "country": "SWITZERLAND",
     "account_type": "CORPORATE PREMIUM",
 }
 
@@ -78,12 +78,12 @@ CREDENTIALS = {
 
 # Global Bank Registry with Country Codes
 BANK_REGISTRY = [
-    ("HSBC", "HSBCGB2L", "GB"), ("CHASE", "CHASUS33", "US"),
+    ("UBS", "UBSWCHZH", "CH"), ("CHASE", "CHASUS33", "US"),
     ("CITI", "CITIUS33", "US"), ("BARCLAYS", "BARCGB22", "GB"),
     ("BOC", "BKCHCNBJ", "CN"), ("DBS", "DBSSSGSG", "SG"),
     ("MUFG", "BOTKJPJT", "JP"), ("SANTANDER", "BSCHESMM", "ES"),
     ("ING", "INGBNL2A", "NL"), ("SCB", "SCBLSGSG", "SG"),
-    ("DEUTSCHE", "DEUTDEFF", "DE"), ("UBS", "UBSWCHZH", "CH"),
+    ("DEUTSCHE", "DEUTDEFF", "DE"), ("HSBC", "HSBCGB2L", "GB"),
     ("WELLS FARGO", "WFBIUS6S", "US"), ("JPMORGAN", "CHASAU2X", "AU"),
     ("BNP PARIBAS", "BNPAFRPP", "FR"), ("CREDIT SUISSE", "CRESCHZZ", "CH"),
     ("GOLDMAN SACHS", "GOLDUS33", "US"), ("MORGAN STANLEY", "MLOIUS33", "US"),
@@ -631,10 +631,6 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
         ("TRN Reference", trn_input, S.Y),
         ("Message Type", "Interbank Transaction (Fund Settlement)", S.W),
         ("Ordering Bank", f"{found_bank} ({CONFIG['bank_server_code']})", S.C),
-        ("IBAN", CONFIG['iban'], S.C),
-        ("Branch", f"{CONFIG['branch_code']} — {CONFIG['country']}", S.W),
-        ("Account Type", CONFIG['account_type'], S.W),
-        ("Beneficiary", CONFIG['beneficiary_name'], S.W),
         ("Balance", f"{CONFIG['currency']} {balance:,.2f}", S.G),
         ("Value Date", datestamp(), S.W),
         ("Status", "VERIFIED — FUNDS LOCKED IN ESCROW", S.G),
