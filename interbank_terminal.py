@@ -293,7 +293,7 @@ def phase_boot():
 {S.RST}"""
     print(boot_art)
     print(f"  {S.DM}{'─'*68}{S.RST}")
-    print(f"  {S.W}{S.BD}  GLOBAL INTERBANK SETTLEMENT NETWORK{S.RST}")
+    print(f"  {S.W}{S.BD}        ▸▸▸  INTERBANK TRANSFER TRANSACTION  ◂◂◂{S.RST}")
     print(f"  {S.DM}  Protocol: BANK-SERVER/MT103 | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
     print(f"  {S.DM}{'─'*68}{S.RST}\n")
     time.sleep(1)
@@ -830,30 +830,32 @@ def phase_settlement(routing_info):
 
 
 
-    # --- Execution with dramatic failure ---
+    # --- Execution with dramatic failure (~30 seconds before FAILED) ---
     spinner("Signing transaction with HSM private key", 1.5)
     spinner("Broadcasting to mempool", 1.0)
     print()
 
-    # Progress bar that fails
+    # Progress bar that fails at ~78% — total propagation ~30 seconds
     sys.stdout.write(f"  {S.C}[TX]{S.RST} Propagating across {random.randint(12,24)} validator nodes: [")
     sys.stdout.flush()
 
-    total = 40
-    fail_at = 31  # ~78%
+    total = 50
+    fail_at = 39  # ~78%
 
+    # Green phase: ~24-26 seconds
     for i in range(fail_at):
         sys.stdout.write(f"{S.G}█{S.RST}")
         sys.stdout.flush()
-        time.sleep(random.uniform(0.15, 0.25))
+        time.sleep(random.uniform(0.55, 0.70))
 
-    # Slow down before failure
+    # Yellow warning phase: ~2.4 seconds
     for i in range(3):
         sys.stdout.write(f"{S.Y}█{S.RST}")
         sys.stdout.flush()
-        time.sleep(0.6)
+        time.sleep(0.8)
 
-    time.sleep(1.5)
+    # Final pause before failure: ~1.8 seconds
+    time.sleep(1.8)
 
     # FAILURE
     remaining = total - fail_at - 3
@@ -861,11 +863,11 @@ def phase_settlement(routing_info):
     time.sleep(0.5)
 
     print()
-    print(f"  {S.R}[✗] CRITICAL: Connection to validator node severed at 78%{S.RST}")
+    print(f"  {S.R}[✗] CRITICAL: Network handshake timeout — peer unreachable{S.RST}")
     time.sleep(0.4)
-    print(f"  {S.R}[✗] TX REJECTED: Insufficient gas oracle confirmation{S.RST}")
+    print(f"  {S.R}[✗] TX DROPPED: Validator quorum not reached — packet voided{S.RST}")
     time.sleep(0.4)
-    print(f"  {S.R}[✗] ROLLBACK: Smart contract reverted — state unchanged{S.RST}")
+    print(f"  {S.R}[✗] CANCELLED: Transaction reversed — no funds were transferred{S.RST}")
     time.sleep(1.5)
 
     # --- Final Failure Report ---
@@ -876,18 +878,18 @@ def phase_settlement(routing_info):
     print(f"  {S.R}{S.BD}╔{'═'*60}╗{S.RST}")
     print(f"  {S.R}{S.BD}║{'SETTLEMENT FAILED':^60}║{S.RST}")
     print(f"  {S.R}{S.BD}╠{'═'*60}╣{S.RST}")
-    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Error        : {S.R}ERR_BRIDGE_TIMEOUT ({err_code}){S.RST}{'':>13}{S.R}{S.BD}║{S.RST}")
-    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Reason       : {S.Y}Remote validator rejected packet{S.RST}{'':>8}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Error        : {S.R}ERR_NETWORK_TIMEOUT ({err_code}){S.RST}{'':>13}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Reason       : {S.Y}Validator quorum unreachable — TX voided{S.RST}{'':>0}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  TX Hash      : {S.DM}{tx_hash[:40]}...{S.RST}{'':>3}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Beneficiary  : {S.W}{routing_info['holder_name']}{S.RST}{'':>{44-len(routing_info['holder_name'])}}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Bank Route   : {S.W}{routing_info['bank_name']} ({routing_info['masked']}){S.RST}{'':>{28-len(routing_info['bank_name'])-len(routing_info['masked'])}}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Wallet       : {S.C}{wallet[:38]}{S.RST}{'':>{6}}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Amount       : {S.W}{crypto_amt:,.4f} {coin}{S.RST}{'':>{34-len(f'{crypto_amt:,.4f} {coin}')}}{S.R}{S.BD}║{S.RST}")
-    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Status       : {S.R}ROLLBACK — FUNDS RETAINED IN ESCROW{S.RST}{'':>3}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Status       : {S.R}TRANSACTION CANCELLED — NO FUNDS DEDUCTED{S.RST}{'':>0}{S.R}{S.BD}║{S.RST}")
     print(f"  {S.R}{S.BD}╚{'═'*60}╝{S.RST}")
     print()
     print(f"  {S.DM}  Connection terminated at {ts()} | Session purged{S.RST}")
-    print(f"  {S.DM}  All volatile memory cleared. No trace remains.{S.RST}")
+    print(f"  {S.DM}  Please retry once network connectivity is restored.{S.RST}")
     print()
 
 
