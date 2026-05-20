@@ -100,6 +100,49 @@ TXN_TYPES = ["MT103", "MT202", "MT940", "SEPA-CT", "TARGET2", "CHAPS", "FEDWIRE"
 TXN_STATUS = ["PENDING", "CLEARED", "SETTLING", "IN-TRANSIT", "QUEUED"]
 
 
+# =====================================================================
+# [ CUSTOM TIMING — EDIT DETIK DI SINI ]
+# =====================================================================
+# Ubah angka-angka di bawah untuk mengatur durasi setiap loading (dalam detik).
+# Contoh: ganti 3.0 jadi 10.0 = loading jadi 10 detik.
+
+TIMING = {
+    # Phase 1: Boot
+    "boot_progress": 3.0,           # Progress bar "System Initialization"
+
+    # Phase 2: Auth
+    "auth_connect": 1.5,            # Spinner connecting to server
+    "auth_verify": 1.5,             # Spinner authenticating
+    "auth_2fa": 1.2,                # Spinner 2FA biometric
+    "auth_session_key": 1.0,        # Spinner generating session key
+
+    # Phase 3: Network
+    "net_hop_duration": 1.2,        # Durasi per hop (rata-rata)
+    "net_ecdhe": 1.5,               # Spinner ECDHE key exchange
+    "net_forward_secrecy": 1.0,     # Spinner forward-secrecy
+    "net_alliance": 1.2,            # Spinner Bank Server Alliance
+    "net_tunnel_progress": 2.0,     # Progress bar tunnel establishment
+
+    # Phase 4: TRN Scan
+    "scan_probe_duration": 1.2,     # Durasi per scan probe node
+    "scan_batch_duration": 1.8,     # Durasi per batch scanning animation
+    "decrypt_layer_duration": 1.8,  # Durasi per layer decryption
+
+    # Phase 5: Routing
+    "routing_validate": 2.0,        # Spinner validating bank code
+    "routing_aml": 1.5,             # Spinner AML/KYC
+    "routing_correspondent": 1.5,   # Spinner correspondent bank
+
+    # Phase 6: Bridge
+    "bridge_ping": 1.5,             # Spinner pinging gateway
+    "bridge_escrow_progress": 2.5,  # Progress bar escrow override
+    "bridge_sync_progress": 2.0,    # Progress bar syncing tunnel
+
+    # Phase 7: Settlement (THE FINAL LOADING)
+    "settlement_duration": 30,      # Total durasi loading bar sebelum FAILED
+}
+
+
 
 # =====================================================================
 # [ TERMINAL STYLING ]
@@ -354,7 +397,7 @@ def phase_boot():
         time.sleep(random.uniform(0.2, 0.5))
 
     print()
-    progress("System Initialization", duration=3.0, width=40)
+    progress("System Initialization", duration=TIMING["boot_progress"], width=40)
     print()
     print(f"  {S.G}{S.BD}  ████  SYSTEM READY  ████{S.RST}")
     print(f"  {S.DM}  Uptime: 0d 0h 0m | Load: 0.42 | Mem: 67%{S.RST}")
@@ -384,7 +427,7 @@ def phase_auth():
     print(f"  {S.DM}│{S.RST} {S.C}Timestamp     :{S.RST} {S.W}{datestamp()} {ts()}{S.RST}          {S.DM}│{S.RST}")
     print(f"  {S.DM}└────────────────────────────────────────────────────────────┘{S.RST}")
     print()
-    spinner(f"Establishing secure connection to {fake_ip}", 1.5)
+    spinner(f"Establishing secure connection to {fake_ip}", TIMING["auth_connect"])
     print()
     sep()
     print()
@@ -399,9 +442,9 @@ def phase_auth():
         pw_hash = hashlib.sha256(pass_input.encode()).hexdigest()
         if user_input == CREDENTIALS["username"] and pw_hash == CREDENTIALS["password_hash"]:
             print()
-            spinner("Authenticating with remote server", 1.5)
-            spinner("Validating 2FA biometric token", 1.2)
-            spinner("Generating ephemeral session key", 1.0)
+            spinner("Authenticating with remote server", TIMING["auth_verify"])
+            spinner("Validating 2FA biometric token", TIMING["auth_2fa"])
+            spinner("Generating ephemeral session key", TIMING["auth_session_key"])
             print(f"\n  {S.G}{S.BD}[✓] IDENTITY CONFIRMED — ACCESS GRANTED{S.RST}")
             print(f"  {S.DM}    Server: ibank-gw.bankmandiri.co.id ({fake_ip}){S.RST}\n")
             time.sleep(1)
@@ -439,7 +482,7 @@ def phase_network():
 
     print(f"  {S.C}[NET]{S.RST} Initiating multi-hop routing sequence:\n")
     for hop_num, node, ntype in hops:
-        trace_hop_animation(hop_num, node, ntype, duration=random.uniform(0.8, 1.5))
+        trace_hop_animation(hop_num, node, ntype, duration=random.uniform(TIMING["net_hop_duration"] * 0.7, TIMING["net_hop_duration"] * 1.3))
         time.sleep(0.2)
 
     print()
@@ -448,12 +491,12 @@ def phase_network():
     print()
 
     # Encryption handshake
-    spinner("Performing ECDHE key exchange (P-384)", 1.5)
-    spinner("Establishing forward-secrecy channel", 1.0)
-    spinner("Loading Bank Server Alliance interface", 1.2)
+    spinner("Performing ECDHE key exchange (P-384)", TIMING["net_ecdhe"])
+    spinner("Establishing forward-secrecy channel", TIMING["net_forward_secrecy"])
+    spinner("Loading Bank Server Alliance interface", TIMING["net_alliance"])
     
     print()
-    progress("Secure Tunnel Establishment", duration=2.0, width=35, color=S.G)
+    progress("Secure Tunnel Establishment", duration=TIMING["net_tunnel_progress"], width=35, color=S.G)
     print()
     print(f"  {S.G}{S.BD}[✓] CONNECTED TO GLOBAL SETTLEMENT NETWORK{S.RST}")
     print(f"  {S.DM}    Cipher: TLS_AES_256_GCM_SHA384 | PFS: ECDHE-P384{S.RST}")
@@ -500,7 +543,7 @@ def phase_trn_scan():
         "RTGS Asia-Pacific (Singapore)",
     ]
     for node in scan_nodes:
-        multi_spinner(f"Probing {node}", duration=random.uniform(0.8, 1.5))
+        multi_spinner(f"Probing {node}", duration=random.uniform(TIMING["scan_probe_duration"] * 0.7, TIMING["scan_probe_duration"] * 1.3))
 
     print()
     print(f"  {S.G}[✓]{S.RST} All scan probes deployed. Listening for TRN matches...\n")
@@ -566,7 +609,7 @@ def phase_trn_live_feed(trn_input):
         # Scanning loading jeda every 7 rows
         if display_count % 7 == 0 and display_count < target_display:
             current_total = base_scanned + scan_counter
-            scanning_animation(f"Batch #{display_count//7} | {current_total:,} scanned", duration=random.uniform(1.2, 2.2))
+            scanning_animation(f"Batch #{display_count//7} | {current_total:,} scanned", duration=random.uniform(TIMING["scan_batch_duration"] * 0.7, TIMING["scan_batch_duration"] * 1.2))
 
         time.sleep(random.uniform(0.01, 0.04))
 
@@ -731,9 +774,9 @@ def phase_routing():
     bank_code = bank_code.strip() or "XXXXXXXXXXX"
 
     print()
-    spinner("Validating Bank Server Code against ISO 9362 registry", 2.0)
-    multi_spinner("Cross-referencing AML/KYC database", 1.5)
-    spinner("Confirming correspondent bank pathway", 1.5)
+    spinner("Validating Bank Server Code against ISO 9362 registry", TIMING["routing_validate"])
+    multi_spinner("Cross-referencing AML/KYC database", TIMING["routing_aml"])
+    spinner("Confirming correspondent bank pathway", TIMING["routing_correspondent"])
     print()
 
     # Mask
@@ -779,7 +822,7 @@ def phase_bridge():
     header("SETTLEMENT BRIDGE", "Institutional Firewall Traversal Engine")
     print()
     
-    spinner("Pinging CryptoHost Settlement Gateway", 1.5)
+    spinner("Pinging CryptoHost Settlement Gateway", TIMING["bridge_ping"])
     print()
 
     # Firewall layers
@@ -808,8 +851,8 @@ def phase_bridge():
         time.sleep(0.2)
 
     print()
-    progress("Multi-Sig Escrow Lock Override", duration=2.5, width=35, color=S.Y)
-    progress("Syncing Settlement Tunnel", duration=2.0, width=35, color=S.G)
+    progress("Multi-Sig Escrow Lock Override", duration=TIMING["bridge_escrow_progress"], width=35, color=S.Y)
+    progress("Syncing Settlement Tunnel", duration=TIMING["bridge_sync_progress"], width=35, color=S.G)
     print()
     print(f"  {S.G}{S.BD}[✓] ALL LAYERS CLEARED — SETTLEMENT BRIDGE ACTIVE{S.RST}")
     time.sleep(1.0)
@@ -882,7 +925,7 @@ def phase_settlement(routing_info):
 
     # === CUSTOM SETTLEMENT DURATION (in seconds) ===
     # Change this value to control how long the loading bar takes before failure
-    SETTLEMENT_DURATION_SECONDS = 30
+    SETTLEMENT_DURATION_SECONDS = TIMING["settlement_duration"]
     # ================================================
 
     total = 50
