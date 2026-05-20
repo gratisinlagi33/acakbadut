@@ -642,9 +642,9 @@ def phase_trn_live_feed(trn_input):
 def phase_trn_deep_analysis(trn_input, scanned_trns):
     """Deep analysis on matched TRN with multi-layer decryption."""
     # --- Signal Intercept ---
-    print(f"\a  {S.R}{S.BD}{'━'*60}{S.RST}")
-    print(f"  {S.R}{S.BD}  ⚡ ANOMALY DETECTED — PATTERN MATCH ON TARGET SIGNATURE ⚡{S.RST}")
-    print(f"  {S.R}{S.BD}{'━'*60}{S.RST}")
+    print(f"\a  {S.G}{S.BD}{'━'*60}{S.RST}")
+    print(f"  {S.G}{S.BD}  ✓ TARGET SIGNATURE MATCHED — FUND TRACE CONFIRMED ✓{S.RST}")
+    print(f"  {S.G}{S.BD}{'━'*60}{S.RST}")
     time.sleep(1.5)
     print()
 
