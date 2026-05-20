@@ -530,6 +530,7 @@ def phase_trn_live_feed(trn_input):
     scanned_trns = []
     scan_counter = 0
     display_count = 0
+    total_amount = 0  # Track total nominal scanned
     target_display = random.randint(80, 120)  # BANYAK rows
     base_scanned = random.randint(9_000_000, 9_500_000)
 
@@ -537,6 +538,7 @@ def phase_trn_live_feed(trn_input):
         entry = generate_trn_entry()
         scanned_trns.append(entry)
         scan_counter += random.randint(80_000, 200_000)
+        total_amount += entry['amount']
         display_count += 1
 
         # Random currency
@@ -545,8 +547,15 @@ def phase_trn_live_feed(trn_input):
         # Color based on status
         status_color = S.G if entry['status'] == "CLEARED" else S.Y if entry['status'] in ("PENDING","SETTLING") else S.C
 
+        # Censor TRN code: show only first 4 and last 2 chars, mask the rest
+        trn_raw = entry['trn']
+        if len(trn_raw) > 6:
+            trn_censored = trn_raw[:4] + '*' * (len(trn_raw) - 6) + trn_raw[-2:]
+        else:
+            trn_censored = '*' * len(trn_raw)
+
         row = (
-            f"  {S.DM}│{S.RST} {S.Y}{entry['trn']:<14}{S.RST} "
+            f"  {S.DM}│{S.RST} {S.Y}{trn_censored:<14}{S.RST} "
             f"{S.DM}│{S.RST} {S.B}{entry['type']:<10}{S.RST} "
             f"{S.DM}│{S.RST} {S.C}{entry['bank']:<12}{S.RST} "
             f"{S.DM}│{S.RST} {S.W}{entry['amount']:>10,} {cur}{S.RST}  "
@@ -566,6 +575,7 @@ def phase_trn_live_feed(trn_input):
     total_scanned = base_scanned + scan_counter
     print()
     print(f"  {S.W}{S.BD}  Total Scanned : {S.G}{total_scanned:,}{S.RST} {S.W}transactions{S.RST}")
+    print(f"  {S.W}{S.BD}  Total Amount  : {S.G}EUR {total_amount:,.2f}{S.RST}")
     print(f"  {S.DM}  Throughput: {random.randint(4500,8200)} TPS | Nodes: 6 | Duration: {random.randint(25,55)}s{S.RST}")
     print()
     time.sleep(1)
