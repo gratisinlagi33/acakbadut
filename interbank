@@ -1,27 +1,35 @@
-#!/usr/bin/env bash
-# =====================================================================
-#  INTERBANK TRANSFER TRANSACTION — Professional Launcher
-#  Version: 3.0 | Build: 2026.05
-# =====================================================================
-#
-#  Usage:
-#    ./interbank          — start the terminal
-#    ./interbank --help   — show help
-#    ./interbank --version — show version
-#
-# =====================================================================
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+╔══════════════════════════════════════════════════════════════════════════╗
+║           INTERBANK SETTLEMENT TERMINAL — ENGINE v3.0                    ║
+║           Build 2026.05.20 | Protocol: BANK-SERVER/MT103                 ║
+║                                                                          ║
+║   [ SIMULATION / DEMONSTRATION TOOL ONLY ]                               ║
+║   No real banking transactions are performed by this software.           ║
+╚══════════════════════════════════════════════════════════════════════════╝
 
-set -e
+Usage:
+    ./interbank          — start the terminal
+    ./interbank --help   — show help
+    ./interbank --version — show version
+"""
 
-VERSION="3.0.0"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
-ENGINE="${SCRIPT_DIR}/interbank_terminal.py"
+import time
+import random
+import os
+import sys
+import hashlib
+import datetime
+import string
 
-case "${1:-}" in
-    -h|--help)
-        cat <<EOF
-INTERBANK TRANSFER TRANSACTION — v${VERSION}
+
+# =====================================================================
+# [ VERSION / CLI HANDLER ]
+# =====================================================================
+VERSION = "3.0.0"
+
+HELP_TEXT = f"""INTERBANK TRANSFER TRANSACTION — v{VERSION}
 
 Usage:
   interbank             Launch the transfer terminal
@@ -31,27 +39,1022 @@ Usage:
 Default credentials (simulation):
   Username : admin
   Password : admin
+"""
 
-EOF
-        exit 0
-        ;;
-    -v|--version)
-        echo "INTERBANK TRANSFER TRANSACTION v${VERSION}"
-        exit 0
-        ;;
-esac
 
-# Verify Python is available
-if ! command -v "${PYTHON_BIN}" >/dev/null 2>&1; then
-    echo "Error: ${PYTHON_BIN} is not installed or not in PATH" >&2
-    exit 1
-fi
+def _handle_cli_args():
+    """Handle --help and --version flags before launching the engine."""
+    if len(sys.argv) > 1:
+        arg = sys.argv[1]
+        if arg in ("-h", "--help"):
+            print(HELP_TEXT)
+            sys.exit(0)
+        elif arg in ("-v", "--version"):
+            print(f"INTERBANK TRANSFER TRANSACTION v{VERSION}")
+            sys.exit(0)
 
-# Verify engine exists
-if [ ! -f "${ENGINE}" ]; then
-    echo "Error: engine file not found at ${ENGINE}" >&2
-    exit 1
-fi
 
-# Launch
-exec "${PYTHON_BIN}" "${ENGINE}" "$@"
+# =====================================================================
+# [ CONFIGURATION ]
+# =====================================================================
+CONFIG = {
+    "target_bank": "UBS",
+    "target_account_last4": "1411",
+    "target_balance_eur": 49_500_000,
+    "beneficiary_name": "JOHN DOE",
+    "currency": "EUR",
+    "iban": "CH93 0076 2011 6238 5295 7",
+    "bank_server_code": "UBSWCHZH80A",
+    "branch_code": "002",
+    "country": "SWITZERLAND",
+    "account_type": "CORPORATE PREMIUM",
+}
+
+CREDENTIALS = {
+    "username": "admin",
+    "password_hash": hashlib.sha256("admin".encode()).hexdigest(),
+}
+
+
+# Global Bank Registry with Country Codes
+BANK_REGISTRY = [
+    ("UBS", "UBSWCHZH", "CH"), ("CHASE", "CHASUS33", "US"),
+    ("CITI", "CITIUS33", "US"), ("BARCLAYS", "BARCGB22", "GB"),
+    ("BOC", "BKCHCNBJ", "CN"), ("DBS", "DBSSSGSG", "SG"),
+    ("MUFG", "BOTKJPJT", "JP"), ("SANTANDER", "BSCHESMM", "ES"),
+    ("ING", "INGBNL2A", "NL"), ("SCB", "SCBLSGSG", "SG"),
+    ("DEUTSCHE", "DEUTDEFF", "DE"), ("HSBC", "HSBCGB2L", "GB"),
+    ("WELLS FARGO", "WFBIUS6S", "US"), ("JPMORGAN", "CHASAU2X", "AU"),
+    ("BNP PARIBAS", "BNPAFRPP", "FR"), ("CREDIT SUISSE", "CRESCHZZ", "CH"),
+    ("GOLDMAN SACHS", "GOLDUS33", "US"), ("MORGAN STANLEY", "MLOIUS33", "US"),
+    ("COMMERZBANK", "COBADEFF", "DE"), ("SOCIETE GENERALE", "SOGEFRPP", "FR"),
+    ("NORDEA", "NDEAFIHH", "FI"), ("RABOBANK", "RABONL2U", "NL"),
+    ("ANZ", "ANZBAU3M", "AU"), ("WESTPAC", "WPACAU2S", "AU"),
+]
+
+SUPPORTED_ASSETS = ["USDT", "BTC", "ETH"]
+CRYPTO_RATES = {"BTC": 68_500.00, "ETH": 3_850.00, "USDT": 1.00}
+
+# Transaction types for realism
+TXN_TYPES = ["MT103", "MT202", "MT940", "SEPA-CT", "TARGET2", "CHAPS", "FEDWIRE"]
+TXN_STATUS = ["PENDING", "CLEARED", "SETTLING", "IN-TRANSIT", "QUEUED"]
+
+
+# =====================================================================
+# [ CUSTOM TIMING — EDIT DETIK DI SINI ]
+# =====================================================================
+# Ubah angka-angka di bawah untuk mengatur durasi setiap loading (dalam detik).
+# Contoh: ganti 3.0 jadi 10.0 = loading jadi 10 detik.
+
+TIMING = {
+    # Phase 1: Boot
+    "boot_progress": 3.0,           # Progress bar "System Initialization"
+
+    # Phase 2: Auth
+    "auth_connect": 1.5,            # Spinner connecting to server
+    "auth_verify": 1.5,             # Spinner authenticating
+    "auth_2fa": 1.2,                # Spinner 2FA biometric
+    "auth_session_key": 1.0,        # Spinner generating session key
+
+    # Phase 3: Network
+    "net_hop_duration": 1.2,        # Durasi per hop (rata-rata)
+    "net_ecdhe": 1.5,               # Spinner ECDHE key exchange
+    "net_forward_secrecy": 1.0,     # Spinner forward-secrecy
+    "net_alliance": 1.2,            # Spinner Bank Server Alliance
+    "net_tunnel_progress": 2.0,     # Progress bar tunnel establishment
+
+    # Phase 4: TRN Scan
+    "scan_probe_duration": 1.2,     # Durasi per scan probe node
+    "scan_batch_duration": 1.8,     # Durasi per batch scanning animation
+    "decrypt_layer_duration": 1.8,  # Durasi per layer decryption
+
+    # Phase 5: Routing
+    "routing_validate": 2.0,        # Spinner validating bank code
+    "routing_aml": 1.5,             # Spinner AML/KYC
+    "routing_correspondent": 1.5,   # Spinner correspondent bank
+
+    # Phase 6: Bridge
+    "bridge_ping": 1.5,             # Spinner pinging gateway
+    "bridge_escrow_progress": 2.5,  # Progress bar escrow override
+    "bridge_sync_progress": 2.0,    # Progress bar syncing tunnel
+
+    # Phase 7: Settlement (THE FINAL LOADING)
+    "settlement_duration": 30,      # Total durasi loading bar sebelum FAILED
+}
+
+
+
+# =====================================================================
+# [ TERMINAL STYLING ]
+# =====================================================================
+class S:
+    """ANSI escape codes."""
+    H = '\033[95m';  C = '\033[96m';  B = '\033[94m'
+    G = '\033[92m';  Y = '\033[93m';  R = '\033[91m'
+    W = '\033[97m';  BD = '\033[1m';  DM = '\033[2m'
+    UL = '\033[4m';  RST = '\033[0m'; BL = '\033[5m'
+
+    @staticmethod
+    def init():
+        if os.name == 'nt':
+            os.system('')
+
+
+# =====================================================================
+# [ UTILITY FUNCTIONS ]
+# =====================================================================
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def ts():
+    return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
+def datestamp():
+    return datetime.datetime.now().strftime("%Y-%m-%d")
+
+def gen_ref(prefix="TRN"):
+    """Generate realistic reference number."""
+    return f"{prefix}-{random.randint(10000,99999)}-{random.choice(string.ascii_uppercase)}{random.randint(10,99)}{random.choice(string.ascii_uppercase)}"
+
+def gen_iban(country="GB"):
+    """Generate fake IBAN."""
+    return f"{country}{random.randint(10,99)}{''.join([str(random.randint(0,9)) for _ in range(20)])}"
+
+def gen_session_id():
+    seed = f"{time.time()}{random.randint(0,99999)}"
+    return hashlib.sha256(seed.encode()).hexdigest()[:20].upper()
+
+
+
+def header(title, subtitle=None, width=64):
+    """Print formatted header."""
+    border = "═" * width
+    print(f"\n{S.C}{S.BD}╔{border}╗{S.RST}")
+    pad = (width - len(title)) // 2
+    print(f"{S.C}{S.BD}║{' '*pad}{S.W}{S.BD}{title}{S.C}{' '*(width-pad-len(title))}║{S.RST}")
+    if subtitle:
+        pad_s = (width - len(subtitle)) // 2
+        print(f"{S.C}{S.BD}║{S.DM}{' '*pad_s}{subtitle}{' '*(width-pad_s-len(subtitle))}{S.C}{S.BD}║{S.RST}")
+    print(f"{S.C}{S.BD}╚{border}╝{S.RST}")
+
+def sep(width=64, ch="─"):
+    print(f"  {S.DM}{ch * width}{S.RST}")
+
+def status(tag, msg, st=None, color=S.C):
+    tag_s = f"{color}[{tag}]{S.RST}"
+    if st:
+        sc = S.G if st in ("OK","VERIFIED","PASSED","ACTIVE","CLEAN") else S.R if st in ("FAIL","ERROR","REJECTED") else S.Y
+        print(f"  {tag_s} {msg} {sc}[{st}]{S.RST}")
+    else:
+        print(f"  {tag_s} {msg}")
+
+def slow_type(text, delay=0.04, color=S.RST):
+    sys.stdout.write(color)
+    for ch in text:
+        sys.stdout.write(ch); sys.stdout.flush()
+        time.sleep(delay)
+    sys.stdout.write(S.RST + '\n')
+
+
+
+def progress(label, duration=3.0, width=35, color=S.G):
+    """Animated progress bar from RIGHT to LEFT (reverse fill)."""
+    step = duration / width
+    for i in range(width):
+        filled = i + 1
+        empty = width - filled
+        # Bar fills from RIGHT: empty on left, filled on right
+        bar_str = f"{S.DM}{'░' * empty}{S.RST}{color}{'█' * filled}{S.RST}"
+        pct = int((filled / width) * 100)
+        sys.stdout.write(f"\r  {S.C}[SYS]{S.RST} {label} [{bar_str}] {S.G}{pct:>3}%{S.RST}")
+        sys.stdout.flush()
+        time.sleep(step)
+    sys.stdout.write(f"\r  {S.C}[SYS]{S.RST} {label} [{color}{'█' * width}{S.RST}] {S.G}{S.BD}100%{S.RST}\n")
+
+def spinner(label, duration=2.0):
+    """Braille spinner animation."""
+    chars = ['⣾','⣽','⣻','⢿','⡿','⣟','⣯','⣷']
+    start = time.time()
+    i = 0
+    while time.time() - start < duration:
+        elapsed = time.time() - start
+        pct = min(int((elapsed/duration)*100), 99)
+        sys.stdout.write(f"\r  {S.C}[{chars[i%len(chars)]}]{S.RST} {label} {S.DM}({pct}%){S.RST}")
+        sys.stdout.flush()
+        time.sleep(0.08)
+        i += 1
+    sys.stdout.write(f"\r  {S.G}[✓]{S.RST} {label} {S.G}(100%){S.RST}  \n")
+
+def multi_spinner(label, duration=2.0):
+    """Double spinner with dots animation."""
+    frames = ['◐','◓','◑','◒']
+    dots = ['   ', '.  ', '.. ', '...']
+    start = time.time()
+    i = 0
+    while time.time() - start < duration:
+        sys.stdout.write(f"\r  {S.Y}[{frames[i%4]}]{S.RST} {label}{S.Y}{dots[i%4]}{S.RST}")
+        sys.stdout.flush()
+        time.sleep(0.15)
+        i += 1
+    sys.stdout.write(f"\r  {S.G}[●]{S.RST} {label} {S.G}[DONE]{S.RST}   \n")
+
+
+
+def scanning_animation(label, duration=1.5):
+    """Hex scanning animation like real terminal trace."""
+    start = time.time()
+    while time.time() - start < duration:
+        hex_data = ' '.join([f"{random.randint(0,255):02X}" for _ in range(8)])
+        sys.stdout.write(f"\r  {S.DM}[SCAN]{S.RST} {label} {S.DM}│ {hex_data} │{S.RST}")
+        sys.stdout.flush()
+        time.sleep(0.06)
+    sys.stdout.write(f"\r  {S.G}[LOCK]{S.RST} {label} {S.G}│ SIGNATURE CAPTURED{S.RST}              \n")
+
+def trace_hop_animation(hop_num, node_name, node_type, duration=1.2):
+    """Animate a single trace hop with loading effect."""
+    frames = ['▹▹▹▹▹', '▸▹▹▹▹', '▸▸▹▹▹', '▸▸▸▹▹', '▸▸▸▸▹', '▸▸▸▸▸']
+    latency = random.randint(12, 189)
+    start = time.time()
+    i = 0
+    while time.time() - start < duration:
+        frame = frames[i % len(frames)]
+        sys.stdout.write(f"\r  {S.Y}HOP {hop_num:02d}{S.RST} {S.C}{frame}{S.RST} {node_name:<25} [{node_type}]")
+        sys.stdout.flush()
+        time.sleep(0.1)
+        i += 1
+    sys.stdout.write(f"\r  {S.G}HOP {hop_num:02d}{S.RST} {S.G}▸▸▸▸▸{S.RST} {node_name:<25} [{node_type}] {S.DM}{latency}ms{S.RST} {S.G}✓{S.RST}\n")
+
+
+
+def get_masked_input(prompt=""):
+    """Get password input with masking."""
+    sys.stdout.write(prompt); sys.stdout.flush()
+    password = ""
+    if os.name == 'nt':
+        import msvcrt
+        while True:
+            ch = msvcrt.getch()
+            if ch in (b'\r', b'\n'):
+                sys.stdout.write('\n'); break
+            elif ch == b'\x08':
+                if password:
+                    password = password[:-1]
+                    sys.stdout.write('\b \b'); sys.stdout.flush()
+            elif ch not in (b'\x00', b'\xe0'):
+                password += ch.decode('utf-8', errors='ignore')
+                sys.stdout.write('•'); sys.stdout.flush()
+    else:
+        try:
+            import tty, termios
+            fd = sys.stdin.fileno()
+            old = termios.tcgetattr(fd)
+            try:
+                tty.setraw(fd)
+                while True:
+                    ch = sys.stdin.read(1)
+                    if ch in ('\r','\n'):
+                        sys.stdout.write('\r\n'); break
+                    elif ch in ('\x7f','\x08'):
+                        if password:
+                            password = password[:-1]
+                            sys.stdout.write('\b \b'); sys.stdout.flush()
+                    elif ch == '\x03':
+                        sys.stdout.write('\r\n'); raise KeyboardInterrupt
+                    else:
+                        password += ch
+                        sys.stdout.write('•'); sys.stdout.flush()
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old)
+        except (ImportError, OSError):
+            import getpass
+            password = getpass.getpass(prompt="")
+    return password
+
+
+
+def generate_trn_entry():
+    """Generate a realistic TRN entry with full details."""
+    bank_info = random.choice(BANK_REGISTRY)
+    bank_name, bic_code, country = bank_info
+    trn = gen_ref("TRN")
+    amount = random.randint(100_000, 25_000_000)
+    txn_type = random.choice(TXN_TYPES)
+    txn_status = random.choice(TXN_STATUS)
+    iban = gen_iban(country)
+    return {
+        "trn": trn,
+        "bank": bank_name,
+        "bank_code": bic_code,
+        "country": country,
+        "amount": amount,
+        "type": txn_type,
+        "status": txn_status,
+        "iban": iban,
+        "timestamp": f"{datestamp()} {ts()}",
+    }
+
+
+# =====================================================================
+# [ PHASE 1: BOOT SEQUENCE ]
+# =====================================================================
+def phase_boot():
+    """System boot sequence - like a real mainframe terminal."""
+    clear()
+    # ASCII art banner
+    boot_art = f"""{S.C}
+    ██╗███╗   ██╗████████╗███████╗██████╗ ██████╗  █████╗ ███╗   ██╗██╗  ██╗
+    ██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗██╔══██╗██╔══██╗████╗  ██║██║ ██╔╝
+    ██║██╔██╗ ██║   ██║   █████╗  ██████╔╝██████╔╝███████║██╔██╗ ██║█████╔╝
+    ██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗██╔══██╗██╔══██║██║╚██╗██║██╔═██╗
+    ██║██║ ╚████║   ██║   ███████╗██║  ██║██████╔╝██║  ██║██║ ╚████║██║  ██╗
+    ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝
+{S.RST}"""
+    print(boot_art)
+    print(f"  {S.DM}{'─'*68}{S.RST}")
+    print(f"  {S.W}{S.BD}        ▸▸▸  INTERBANK TRANSFER TRANSACTION  ◂◂◂{S.RST}")
+    print(f"  {S.DM}  Protocol: BANK-SERVER/MT103 | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
+    print(f"  {S.DM}{'─'*68}{S.RST}\n")
+    time.sleep(1)
+
+
+
+    # Boot sequence items
+    boot_items = [
+        ("Kernel", "Loading secure kernel module v4.19.2-interbank"),
+        ("Crypto", "Initializing OpenSSL 3.1.4 / LibreSSL 3.8.1"),
+        ("Net", "Binding to Bank Server Network Interface (BankNet Core Link 7.4)"),
+        ("HSM", "Hardware Security Module handshake (Thales Luna 7)"),
+        ("PKI", "Loading X.509 certificate chain (4096-bit RSA)"),
+        ("Auth", "Starting PAM authentication daemon"),
+        ("Audit", "Enabling ISO 27001 compliance audit logger"),
+        ("Mem", "Allocating 2048MB secure memory partition"),
+        ("Clock", "NTP sync to stratum-1 (deviation: <2ms)"),
+        ("Core", "Connecting to Core Banking Engine v12.7"),
+    ]
+
+    for tag, msg in boot_items:
+        status(tag.upper(), msg, "OK")
+        time.sleep(random.uniform(0.2, 0.5))
+
+    print()
+    progress("System Initialization", duration=TIMING["boot_progress"], width=40)
+    print()
+    print(f"  {S.G}{S.BD}  ████  SYSTEM READY  ████{S.RST}")
+    print(f"  {S.DM}  Uptime: 0d 0h 0m | Load: 0.42 | Mem: 67%{S.RST}")
+    time.sleep(1.5)
+
+
+# =====================================================================
+# [ PHASE 2: AUTHENTICATION ]
+# =====================================================================
+def phase_auth():
+    """Multi-layer authentication via remote banking gateway."""
+    clear()
+    header("AUTHENTICATION GATEWAY", "Remote Banking Server Login")
+    print()
+
+    # Simulate connecting to bank IP
+    fake_ip = f"103.{random.randint(10,99)}.{random.randint(100,255)}.{random.randint(2,254)}"
+    fake_port = random.choice([443, 8443, 9443])
+    session_id = gen_session_id()
+
+    print(f"  {S.DM}┌────────────────────────────────────────────────────────────┐{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Connecting to :{S.RST} {S.W}{S.BD}https://{fake_ip}:{fake_port}/secure/auth{S.RST} {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Host          :{S.RST} {S.W}ibank-gw.bankmandiri.co.id{S.RST}           {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Protocol      :{S.RST} {S.W}TLS 1.3 / AES-256-GCM-SHA384{S.RST}       {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Certificate   :{S.RST} {S.G}VALID{S.RST} (DigiCert Global Root G2)      {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Session       :{S.RST} {S.W}{session_id}{S.RST}       {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Timestamp     :{S.RST} {S.W}{datestamp()} {ts()}{S.RST}          {S.DM}│{S.RST}")
+    print(f"  {S.DM}└────────────────────────────────────────────────────────────┘{S.RST}")
+    print()
+    spinner(f"Establishing secure connection to {fake_ip}", TIMING["auth_connect"])
+    print()
+    sep()
+    print()
+
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        # Both username and password are masked with asterisks
+        user_input = get_masked_input(f"  {S.Y}▸ Operator ID : {S.RST}")
+        pass_input = get_masked_input(f"  {S.Y}▸ Access Key  : {S.RST}")
+        
+        # Verify
+        pw_hash = hashlib.sha256(pass_input.encode()).hexdigest()
+        if user_input == CREDENTIALS["username"] and pw_hash == CREDENTIALS["password_hash"]:
+            print()
+            spinner("Authenticating with remote server", TIMING["auth_verify"])
+            spinner("Validating 2FA biometric token", TIMING["auth_2fa"])
+            spinner("Generating ephemeral session key", TIMING["auth_session_key"])
+            print(f"\n  {S.G}{S.BD}[✓] IDENTITY CONFIRMED — ACCESS GRANTED{S.RST}")
+            print(f"  {S.DM}    Server: ibank-gw.bankmandiri.co.id ({fake_ip}){S.RST}\n")
+            time.sleep(1)
+            return True
+        else:
+            remaining = max_attempts - attempt - 1
+            print(f"\n  {S.R}[✗] ACCESS DENIED — Remote server rejected credentials.{S.RST}")
+            if remaining > 0:
+                print(f"  {S.DM}    {remaining} attempt(s) remaining before IP blacklist.{S.RST}\n")
+    
+    print(f"\n  {S.R}{S.BD}[LOCKED] IP blacklisted by remote server. Terminal disabled.{S.RST}")
+    print(f"  {S.DM}Contact NOC: security@bankmandiri.co.id{S.RST}")
+    return False
+
+
+
+# =====================================================================
+# [ PHASE 3: NETWORK HANDSHAKE ]
+# =====================================================================
+def phase_network():
+    """Establish connection to interbank network with trace routing."""
+    clear()
+    header("NETWORK HANDSHAKE", "Establishing Multi-Node Secure Tunnel")
+    print()
+
+    # Show connection hops
+    hops = [
+        (1, "LOCAL-GATEWAY", "ENTRY"),
+        (2, "ISP-CORE-ROUTER", "RELAY"),
+        (3, "EU-BACKBONE-NODE-7", "TRUNK"),
+        (4, "BANK-PROXY-BRUSSELS", "BANK-SRV"),
+        (5, "INTERBANK-CORE-LDN", "CORE"),
+        (6, "SETTLEMENT-ENGINE-A", "TARGET"),
+    ]
+
+    print(f"  {S.C}[NET]{S.RST} Initiating multi-hop routing sequence:\n")
+    for hop_num, node, ntype in hops:
+        trace_hop_animation(hop_num, node, ntype, duration=random.uniform(TIMING["net_hop_duration"] * 0.7, TIMING["net_hop_duration"] * 1.3))
+        time.sleep(0.2)
+
+    print()
+    print(f"  {S.DM}  Route: LOCAL → ISP → EU-BACKBONE → BANK-SRV → CORE → ENGINE{S.RST}")
+    print(f"  {S.DM}  Total latency: {random.randint(45, 120)}ms | Jitter: <2ms | Loss: 0.00%{S.RST}")
+    print()
+
+    # Encryption handshake
+    spinner("Performing ECDHE key exchange (P-384)", TIMING["net_ecdhe"])
+    spinner("Establishing forward-secrecy channel", TIMING["net_forward_secrecy"])
+    spinner("Loading Bank Server Alliance interface", TIMING["net_alliance"])
+    
+    print()
+    progress("Secure Tunnel Establishment", duration=TIMING["net_tunnel_progress"], width=35, color=S.G)
+    print()
+    print(f"  {S.G}{S.BD}[✓] CONNECTED TO GLOBAL SETTLEMENT NETWORK{S.RST}")
+    print(f"  {S.DM}    Cipher: TLS_AES_256_GCM_SHA384 | PFS: ECDHE-P384{S.RST}")
+    time.sleep(1.2)
+
+
+
+# =====================================================================
+# [ PHASE 4: TRN MULTI-SCAN — THE MAIN EVENT ]
+# =====================================================================
+def phase_trn_scan():
+    """Multi-TRN scanning with individual loading per TRN - the cool part."""
+    clear()
+    header("DEEP TRACE — FUND TRACKING ENGINE", "Multi-Node Transaction Scanner v3.2")
+    print()
+    print(f"  {S.DM}┌──────────────────────────────────────────────────────────────┐{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.W}Mode    :{S.RST} DEEP SCAN (Multi-TRN Parallel Trace)           {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.W}Network :{S.RST} BANK-SERVER + TARGET2 + FEDWIRE + CHAPS          {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.W}Range   :{S.RST} Last 72 hours — All jurisdictions               {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.W}Time    :{S.RST} {datestamp()} {ts()}                     {S.DM}│{S.RST}")
+    print(f"  {S.DM}└──────────────────────────────────────────────────────────────┘{S.RST}")
+    print()
+    sep()
+    print()
+
+    trn_input = input(f"  {S.Y}▸ Enter Target TRN Signature : {S.RST}")
+    if not trn_input.strip():
+        trn_input = gen_ref("TRN")
+        print(f"  {S.DM}  (Auto-assigned: {trn_input}){S.RST}")
+
+    print()
+    time.sleep(0.5)
+
+    # --- PHASE 4A: Initial scan deployment ---
+    print(f"  {S.C}[TRACE]{S.RST} Deploying scan probes across settlement networks...")
+    time.sleep(0.5)
+
+    scan_nodes = [
+        "BANK-SERVER Tracker (Brussels)",
+        "FEDWIRE Real-Time (New York)",
+        "TARGET2 Cluster (Frankfurt)",
+        "CHAPS Sterling (London)",
+        "SEPA Hub (Amsterdam)",
+        "RTGS Asia-Pacific (Singapore)",
+    ]
+    for node in scan_nodes:
+        multi_spinner(f"Probing {node}", duration=random.uniform(TIMING["scan_probe_duration"] * 0.7, TIMING["scan_probe_duration"] * 1.3))
+
+    print()
+    print(f"  {S.G}[✓]{S.RST} All scan probes deployed. Listening for TRN matches...\n")
+    time.sleep(1)
+
+    return trn_input
+
+
+
+def phase_trn_live_feed(trn_input):
+    """Display live TRN feed — scans 10,000,000+ entries with loading effects."""
+    clear()
+    header("LIVE TRANSACTION INTERCEPT", f"Scanning for: {trn_input}")
+    print()
+    print(f"  {S.DM}  Target: {trn_input} | Scanning 10,000,000+ ledger entries...{S.RST}")
+    print()
+
+    # Multi-currency for realism
+    CURRENCIES = ["€", "$", "£", "¥", "CHF", "A$", "S$", "HK$"]
+
+    # Table header
+    print(f"  {S.DM}┌{'─'*16}┬{'─'*12}┬{'─'*14}┬{'─'*16}┬{'─'*10}┐{S.RST}")
+    print(f"  {S.DM}│{S.BD}{S.W} {'TRN REF':<14} {S.DM}│{S.BD}{S.W} {'TYPE':<10} {S.DM}│{S.BD}{S.W} {'BANK':<12} {S.DM}│{S.BD}{S.W} {'AMOUNT':>14} {S.DM}│{S.BD}{S.W} {'STATUS':<8} {S.DM}│{S.RST}")
+    print(f"  {S.DM}├{'─'*16}┼{'─'*12}┼{'─'*14}┼{'─'*16}┼{'─'*10}┤{S.RST}")
+
+    # Massive scan: simulate 10,000,000+ with big jumps
+    scanned_trns = []
+    scan_counter = 0
+    display_count = 0
+    total_amount = 0  # Track total nominal scanned
+    target_display = random.randint(80, 120)  # BANYAK rows
+    base_scanned = random.randint(9_000_000, 9_500_000)
+
+    while display_count < target_display:
+        entry = generate_trn_entry()
+        scanned_trns.append(entry)
+        scan_counter += random.randint(80_000, 200_000)
+        total_amount += entry['amount']
+        display_count += 1
+
+        # Random currency
+        cur = random.choice(CURRENCIES)
+
+        # Color based on status
+        status_color = S.G if entry['status'] == "CLEARED" else S.Y if entry['status'] in ("PENDING","SETTLING") else S.C
+
+        # Censor TRN code: show only first 4 and last 2 chars, mask the rest
+        trn_raw = entry['trn']
+        if len(trn_raw) > 6:
+            trn_censored = trn_raw[:4] + '*' * (len(trn_raw) - 6) + trn_raw[-2:]
+        else:
+            trn_censored = '*' * len(trn_raw)
+
+        row = (
+            f"  {S.DM}│{S.RST} {S.Y}{trn_censored:<14}{S.RST} "
+            f"{S.DM}│{S.RST} {S.B}{entry['type']:<10}{S.RST} "
+            f"{S.DM}│{S.RST} {S.C}{entry['bank']:<12}{S.RST} "
+            f"{S.DM}│{S.RST} {S.W}{entry['amount']:>10,} {cur}{S.RST}  "
+            f"{S.DM}│{S.RST} {status_color}{entry['status']:<8}{S.RST} {S.DM}│{S.RST}"
+        )
+        print(row)
+
+        # Scanning loading jeda every 7 rows
+        if display_count % 7 == 0 and display_count < target_display:
+            current_total = base_scanned + scan_counter
+            scanning_animation(f"Batch #{display_count//7} | {current_total:,} scanned", duration=random.uniform(TIMING["scan_batch_duration"] * 0.7, TIMING["scan_batch_duration"] * 1.2))
+
+        time.sleep(random.uniform(0.01, 0.04))
+
+    print(f"  {S.DM}└{'─'*16}┴{'─'*12}┴{'─'*14}┴{'─'*16}┴{'─'*10}┘{S.RST}")
+    
+    total_scanned = base_scanned + scan_counter
+    print()
+    print(f"  {S.W}{S.BD}  Total Scanned : {S.G}{total_scanned:,}{S.RST} {S.W}transactions{S.RST}")
+    print(f"  {S.W}{S.BD}  Total Amount  : {S.G}EUR {total_amount:,.2f}{S.RST}")
+    print(f"  {S.DM}  Throughput: {random.randint(4500,8200)} TPS | Nodes: 6 | Duration: {random.randint(25,55)}s{S.RST}")
+    print()
+    time.sleep(1)
+
+    return scanned_trns
+
+
+
+def phase_trn_deep_analysis(trn_input, scanned_trns):
+    """Deep analysis on matched TRN with multi-layer decryption."""
+    # --- Signal Intercept ---
+    print(f"\a  {S.R}{S.BD}{'━'*60}{S.RST}")
+    print(f"  {S.R}{S.BD}  ⚡ ANOMALY DETECTED — PATTERN MATCH ON TARGET SIGNATURE ⚡{S.RST}")
+    print(f"  {S.R}{S.BD}{'━'*60}{S.RST}")
+    time.sleep(1.5)
+    print()
+
+    # Multi-layer decryption animation
+    layers = [
+        ("Layer 1/4", "Stripping TLS envelope", 1.5),
+        ("Layer 2/4", "Decoding Bank Server MT103 payload", 2.0),
+        ("Layer 3/4", "Extracting beneficiary metadata", 1.8),
+        ("Layer 4/4", "Reconstructing ledger entry", 2.2),
+    ]
+
+    print(f"  {S.C}[DECRYPT]{S.RST} Initiating multi-layer decryption:\n")
+    for layer_name, desc, dur in layers:
+        sys.stdout.write(f"  {S.Y}[{layer_name}]{S.RST} {desc} ")
+        sys.stdout.flush()
+        # Hex stream effect
+        for _ in range(int(dur * 8)):
+            hex_byte = f"{random.randint(0,255):02X}"
+            sys.stdout.write(f"{S.DM}{hex_byte}{S.RST} ")
+            sys.stdout.flush()
+            time.sleep(0.06)
+        print(f"{S.G}[DECODED]{S.RST}")
+        time.sleep(0.3)
+
+    print()
+    time.sleep(1)
+
+    # --- REVEAL TARGET DATA ---
+    balance = CONFIG["target_balance_eur"]
+    found_bank = CONFIG["target_bank"]
+    
+    print(f"  {S.G}{S.BD}{'═'*60}{S.RST}")
+    print(f"  {S.G}{S.BD}      ██  TARGET FUND LOCATED — SIGNATURE VERIFIED  ██{S.RST}")
+    print(f"  {S.G}{S.BD}{'═'*60}{S.RST}")
+    print()
+
+    # Detailed target info (like real banking data)
+    reveal_data = [
+        ("TRN Reference", trn_input, S.Y),
+        ("Message Type", "Interbank Transaction (Fund Settlement)", S.W),
+        ("Ordering Bank", f"{found_bank} ({CONFIG['bank_server_code']})", S.C),
+        ("Balance", f"{CONFIG['currency']} {balance:,.2f}", S.G),
+        ("Value Date", datestamp(), S.W),
+        ("Status", "VERIFIED — FUNDS LOCKED IN ESCROW", S.G),
+    ]
+
+    for label, value, color in reveal_data:
+        sys.stdout.write(f"  {S.BD}  {label:<18}: {S.RST}")
+        sys.stdout.flush()
+        # Typing reveal effect for important fields
+        if label in ("Balance", "Beneficiary", "IBAN"):
+            slow_type(f"{value}", 0.06, color)
+        else:
+            print(f"{color}{value}{S.RST}")
+        time.sleep(0.3)
+
+    print()
+    print(f"  {S.G}{S.BD}{'═'*60}{S.RST}")
+    print()
+    
+    # Transaction history
+    print(f"  {S.C}[SYS]{S.RST} Pulling recent transaction history for target account...\n")
+    time.sleep(1)
+    spinner("Querying ledger database", 1.5)
+    print()
+
+
+
+    # Show mini transaction history
+    print(f"  {S.DM}┌{'─'*10}┬{'─'*22}┬{'─'*16}┬{'─'*10}┐{S.RST}")
+    print(f"  {S.DM}│{S.BD}{S.W} {'DATE':<8} {S.DM}│{S.BD}{S.W} {'DESCRIPTION':<20} {S.DM}│{S.BD}{S.W} {'AMOUNT':>14} {S.DM}│{S.BD}{S.W} {'DR/CR':<8} {S.DM}│{S.RST}")
+    print(f"  {S.DM}├{'─'*10}┼{'─'*22}┼{'─'*16}┼{'─'*10}┤{S.RST}")
+
+    history_items = [
+        ("05-18", "Bank Transfer In", f"+2,450,000 €", "CR"),
+        ("05-17", "Internal Move", f"+5,100,000 €", "CR"),
+        ("05-15", "Wire from MUFG", f"+1,890,000 €", "CR"),
+        ("05-14", "Settlement Rev", f"+3,200,000 €", "CR"),
+        ("05-12", "Dividend Credit", f"+1,924,000 €", "CR"),
+    ]
+
+    for date, desc, amt, direction in history_items:
+        dc_color = S.G if direction == "CR" else S.R
+        print(f"  {S.DM}│{S.RST} {S.DM}{date:<8}{S.RST} {S.DM}│{S.RST} {S.W}{desc:<20}{S.RST} {S.DM}│{S.RST} {S.G}{amt:>14}{S.RST} {S.DM}│{S.RST} {dc_color}{direction:<8}{S.RST} {S.DM}│{S.RST}")
+        time.sleep(0.3)
+
+    print(f"  {S.DM}└{'─'*10}┴{'─'*22}┴{'─'*16}┴{'─'*10}┘{S.RST}")
+    print()
+    print(f"  {S.G}{S.BD}[✓] Target fund confirmed: {CONFIG['currency']} {balance:,.2f} available in escrow.{S.RST}")
+    time.sleep(2)
+
+
+# =====================================================================
+# [ PHASE 5: BANK ROUTING ]
+# =====================================================================
+def phase_routing():
+    """Collect and verify destination routing."""
+    clear()
+    header("SETTLEMENT ROUTING", "Destination Bank Configuration")
+    print()
+    print(f"  {S.DM}  Configure the receiving bank for fund settlement.{S.RST}")
+    print(f"  {S.DM}  All data is encrypted and stored in volatile memory only.{S.RST}")
+    print()
+    sep()
+    print()
+
+    bank_name = ""
+    while True:
+        bank_name = input(f"  {S.Y}▸ Destination Bank      : {S.RST}").strip()
+        if not bank_name:
+            print(f"  {S.R}    [!] Bank name is required.{S.RST}")
+        elif not all(c.isalpha() or c.isspace() for c in bank_name):
+            print(f"  {S.R}    [!] Bank name must contain alphabets only (no numbers).{S.RST}")
+        else:
+            break
+
+    account_no = ""
+    while True:
+        account_no = input(f"  {S.Y}▸ Account Number        : {S.RST}").strip()
+        if not account_no:
+            print(f"  {S.R}    [!] Account number is required.{S.RST}")
+        elif not account_no.isdigit():
+            print(f"  {S.R}    [!] Account number must contain numbers only (no letters).{S.RST}")
+        else:
+            break
+
+    bank_code = input(f"  {S.Y}▸ Bank Server Code        : {S.RST}")
+    holder_name = ""
+    while True:
+        holder_name = input(f"  {S.Y}▸ Account Holder Name   : {S.RST}").strip()
+        if not holder_name:
+            print(f"  {S.R}    [!] Holder name is required.{S.RST}")
+        elif not all(c.isalpha() or c.isspace() for c in holder_name):
+            print(f"  {S.R}    [!] Holder name must contain alphabets only.{S.RST}")
+        else:
+            break
+
+    # Defaults for optional
+    bank_code = bank_code.strip() or "XXXXXXXXXXX"
+
+    print()
+    spinner("Validating Bank Server Code against ISO 9362 registry", TIMING["routing_validate"])
+    multi_spinner("Cross-referencing AML/KYC database", TIMING["routing_aml"])
+    spinner("Confirming correspondent bank pathway", TIMING["routing_correspondent"])
+    print()
+
+    # Mask
+    if len(account_no) > 4:
+        masked = '*' * (len(account_no) - 4) + account_no[-4:]
+    else:
+        masked = '*' * len(account_no)
+
+
+
+    # Verification result
+    print(f"  {S.G}{S.BD}┌────────────────────────────────────────────────────┐{S.RST}")
+    print(f"  {S.G}{S.BD}│          ROUTING VERIFICATION: PASSED              │{S.RST}")
+    print(f"  {S.G}{S.BD}└────────────────────────────────────────────────────┘{S.RST}")
+    print()
+    print(f"  {S.BD}  Bank           : {S.W}{bank_name.upper()}{S.RST}")
+    print(f"  {S.BD}  Account        : {S.W}{masked}{S.RST}")
+    print(f"  {S.BD}  Bank Server Code      : {S.W}{bank_code.upper()}{S.RST}")
+    print(f"  {S.BD}  Holder         : {S.W}{holder_name.upper()}{S.RST}")
+    print(f"  {S.BD}  Correspondent  : {S.W}DEUTSCHE BANK AG (DEUTDEFF){S.RST}")
+    print(f"  {S.BD}  AML Check      : {S.G}CLEARED{S.RST}")
+    print(f"  {S.BD}  KYC Status     : {S.G}VERIFIED{S.RST}")
+    print()
+    sep()
+
+    input(f"\n  {S.Y}▸ Press ENTER to initiate settlement bridge...{S.RST}")
+
+    return {
+        "bank_name": bank_name.upper(),
+        "account_no": account_no,
+        "masked": masked,
+        "bank_code": bank_code.upper(),
+        "holder_name": holder_name.upper(),
+    }
+
+
+# =====================================================================
+# [ PHASE 6: SETTLEMENT BRIDGE ]
+# =====================================================================
+def phase_bridge():
+    """Advanced settlement bridge with firewall traversal."""
+    clear()
+    header("SETTLEMENT BRIDGE", "Institutional Firewall Traversal Engine")
+    print()
+    
+    spinner("Pinging CryptoHost Settlement Gateway", TIMING["bridge_ping"])
+    print()
+
+    # Firewall layers
+    firewalls = [
+        ("BANK-SANCTIONS-SCREEN", "COMPLIANCE", "Sanctions list cross-check"),
+        ("FED-RESERVE-OFAC", "REGULATORY", "OFAC/SDN clearance verification"),
+        ("ECB-OVERSIGHT-NODE", "REGULATORY", "ECB transaction monitoring"),
+        ("INTERPOL-I-24/7", "SECURITY", "Financial crime database scan"),
+        ("FATF-GREYLST-CHECK", "AML", "FATF mutual evaluation"),
+        ("COLD-WALLET-AUTH", "CRYPTO", "Multi-sig wallet authorization"),
+        ("TREASURY-NOSTRO-LINK", "BANKING", "Nostro account reconciliation"),
+    ]
+
+    print(f"  {S.C}[BRIDGE]{S.RST} Traversing {len(firewalls)} security layers:\n")
+
+    for fw_name, fw_type, desc in firewalls:
+        sys.stdout.write(f"  {S.B}  [{fw_type:^12}]{S.RST} {fw_name:<24} ")
+        sys.stdout.flush()
+        # Mini loading for each firewall
+        for _ in range(random.randint(5, 12)):
+            sys.stdout.write(f"{S.Y}·{S.RST}")
+            sys.stdout.flush()
+            time.sleep(0.1)
+        print(f" {S.G}[CLEARED]{S.RST}")
+        print(f"  {S.DM}             └─ {desc}{S.RST}")
+        time.sleep(0.2)
+
+    print()
+    progress("Multi-Sig Escrow Lock Override", duration=TIMING["bridge_escrow_progress"], width=35, color=S.Y)
+    progress("Syncing Settlement Tunnel", duration=TIMING["bridge_sync_progress"], width=35, color=S.G)
+    print()
+    print(f"  {S.G}{S.BD}[✓] ALL LAYERS CLEARED — SETTLEMENT BRIDGE ACTIVE{S.RST}")
+    time.sleep(1.0)
+
+
+
+# =====================================================================
+# [ PHASE 7: CRYPTO SETTLEMENT (Intentional Failure) ]
+# =====================================================================
+def phase_settlement(routing_info):
+    """Final settlement phase — always fails dramatically."""
+    clear()
+    header("BLOCKCHAIN SETTLEMENT ENGINE", "Fiat-to-Crypto Bridge Protocol")
+    print()
+    print(f"  {S.DM}┌──────────────────────────────────────────────────────────┐{S.RST}")
+    print(f"  {S.DM}│{S.RST}  Supported : {S.G}USDT (TRC20/ERC20){S.RST} | {S.Y}BTC{S.RST} | {S.B}ETH{S.RST}          {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  Network   : Decentralized Bridge (ChainLink Oracle)    {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  Slippage  : <0.1% | Gas: Optimized (Layer 2)           {S.DM}│{S.RST}")
+    print(f"  {S.DM}└──────────────────────────────────────────────────────────┘{S.RST}")
+    print()
+    sep()
+    print()
+
+    wallet = input(f"  {S.Y}▸ Destination Wallet Address  : {S.RST}")
+    network = input(f"  {S.Y}▸ Network (ERC20/TRC20/BTC)   : {S.RST}").upper().strip() or "ERC20"
+    coin = input(f"  {S.Y}▸ Asset (USDT/BTC/ETH)        : {S.RST}").upper().strip()
+
+    if coin not in SUPPORTED_ASSETS:
+        print(f"  {S.DM}  (Defaulting to USDT){S.RST}")
+        coin = "USDT"
+
+    if not wallet.strip():
+        wallet = "0x" + hashlib.sha256(str(time.time()).encode()).hexdigest()[:40]
+        print(f"  {S.DM}  (Auto: {wallet}){S.RST}")
+
+    balance = CONFIG["target_balance_eur"]
+    rate = CRYPTO_RATES[coin]
+    crypto_amt = balance / rate
+    gas_fee = random.uniform(0.5, 15.0)
+
+    print()
+    print(f"  {S.C}[ENGINE]{S.RST} Preparing settlement transaction...")
+    time.sleep(1)
+
+    # Transaction summary before execution
+    print()
+    print(f"  {S.DM}┌────────────────── TRANSACTION PREVIEW ──────────────────┐{S.RST}")
+    print(f"  {S.DM}│{S.RST}  From    : ESCROW VAULT ({CONFIG['target_bank']})                  {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  To      : {wallet[:20]}...{wallet[-8:] if len(wallet)>28 else '':<12} {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  Amount  : {S.G}{CONFIG['currency']} {balance:>14,.2f}{S.RST}                      {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  Convert : {S.G}{crypto_amt:>14,.4f} {coin}{S.RST}                       {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  Rate    : 1 {coin} = {CONFIG['currency']} {rate:,.2f}                  {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  Network : {network} | Gas: ~{gas_fee:.2f} {coin}            {S.DM}│{S.RST}")
+    print(f"  {S.DM}└──────────────────────────────────────────────────────────┘{S.RST}")
+    print()
+
+    input(f"  {S.Y}▸ Press ENTER to execute settlement...{S.RST}")
+    print()
+
+
+
+    # --- Execution with dramatic failure (~30 seconds before FAILED) ---
+    spinner("Signing transaction with HSM private key", 1.5)
+    spinner("Broadcasting to mempool", 1.0)
+    print()
+
+    # Progress bar that fails at ~78% — total propagation ~30 seconds
+    sys.stdout.write(f"  {S.C}[TX]{S.RST} Propagating across {random.randint(12,24)} validator nodes: [")
+    sys.stdout.flush()
+
+    # === CUSTOM SETTLEMENT DURATION (in seconds) ===
+    # Change this value to control how long the loading bar takes before failure
+    SETTLEMENT_DURATION_SECONDS = TIMING["settlement_duration"]
+    # ================================================
+
+    total = 50
+    fail_at = 39  # ~78%
+
+    # Calculate delay per block based on custom duration
+    green_duration = SETTLEMENT_DURATION_SECONDS * 0.82  # 82% of time for green phase
+    yellow_duration = SETTLEMENT_DURATION_SECONDS * 0.10  # 10% for yellow
+    pause_duration = SETTLEMENT_DURATION_SECONDS * 0.08   # 8% final pause
+
+    # Green phase
+    for i in range(fail_at):
+        sys.stdout.write(f"{S.G}█{S.RST}")
+        sys.stdout.flush()
+        time.sleep(green_duration / fail_at)
+
+    # Yellow warning phase
+    for i in range(3):
+        sys.stdout.write(f"{S.Y}█{S.RST}")
+        sys.stdout.flush()
+        time.sleep(yellow_duration / 3)
+
+    # Final pause before failure
+    time.sleep(pause_duration)
+
+    # FAILURE
+    remaining = total - fail_at - 3
+    sys.stdout.write(f"{S.R}{'█' * 2}{S.RST}{S.DM}{'░' * (remaining - 2)}{S.RST}] {S.R}{S.BD}FAILED{S.RST}\n")
+    time.sleep(0.5)
+
+    print()
+    print(f"  {S.R}[✗] CRITICAL: Smart contract execution reverted by liquidity pool{S.RST}")
+    time.sleep(0.4)
+    print(f"  {S.R}[✗] TX REJECTED: Amount exceeds single-block settlement capacity{S.RST}")
+    time.sleep(0.4)
+    print(f"  {S.R}[✗] DENIED: Receiving exchange compliance module flagged transaction{S.RST}")
+    time.sleep(1.5)
+
+    # --- Final Failure Report ---
+    print()
+    err_code = f"0x{random.randint(0xA000, 0xFFFF):04X}"
+    tx_hash = "0x" + hashlib.sha256(f"{time.time()}".encode()).hexdigest()[:64]
+
+    print(f"  {S.R}{S.BD}╔{'═'*60}╗{S.RST}")
+    print(f"  {S.R}{S.BD}║{'SETTLEMENT FAILED':^60}║{S.RST}")
+    print(f"  {S.R}{S.BD}╠{'═'*60}╣{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Error        : {S.R}ERR_NETWORK_TIMEOUT ({err_code}){S.RST}{'':>13}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Reason       : {S.Y}Validator quorum unreachable — TX voided{S.RST}{'':>0}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  TX Hash      : {S.DM}{tx_hash[:40]}...{S.RST}{'':>3}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Beneficiary  : {S.W}{routing_info['holder_name']}{S.RST}{'':>{44-len(routing_info['holder_name'])}}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Bank Route   : {S.W}{routing_info['bank_name']} ({routing_info['masked']}){S.RST}{'':>{28-len(routing_info['bank_name'])-len(routing_info['masked'])}}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Wallet       : {S.C}{wallet[:38]}{S.RST}{'':>{6}}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Amount       : {S.W}{crypto_amt:,.4f} {coin}{S.RST}{'':>{34-len(f'{crypto_amt:,.4f} {coin}')}}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}║{S.RST}{S.BD}  Status       : {S.R}DECLINED BY EXCHANGE — SETTLEMENT LIMIT EXCEEDED{S.RST}{S.R}{S.BD}║{S.RST}")
+    print(f"  {S.R}{S.BD}╚{'═'*60}╝{S.RST}")
+    print()
+    print(f"  {S.DM}  Transaction declined by receiving exchange at {ts()}{S.RST}")
+    print(f"  {S.DM}  Reason: Volume exceeds daily OTC desk processing threshold.{S.RST}")
+    print(f"  {S.DM}  Contact your exchange liaison for manual settlement approval.{S.RST}")
+    print()
+    input(f"  {S.Y}▸ Press ENTER to close terminal...{S.RST}")
+
+
+
+# =====================================================================
+# [ MAIN EXECUTION ]
+# =====================================================================
+def main():
+    """Main execution flow - 7 phases."""
+    S.init()
+
+    # Set terminal window title
+    if os.name == 'nt':
+        os.system('title INTERBANK TRANSFER TRANSACTION')
+    else:
+        sys.stdout.write('\033]0;INTERBANK TRANSFER TRANSACTION\007')
+        sys.stdout.flush()
+
+    # Phase 1: Boot
+    phase_boot()
+
+    # Phase 2: Auth
+    clear()
+    if not phase_auth():
+        clear()
+        print(f"\n  {S.R}{S.BD}[SYSTEM] Terminal disabled due to authentication failure.{S.RST}")
+        print(f"  {S.DM}Contact SOC: incident@interbank-secure.net{S.RST}\n")
+        sys.exit(1)
+
+    # Phase 3: Network
+    phase_network()
+
+    # Phase 4: TRN Scan Setup
+    trn_code = phase_trn_scan()
+
+    # Phase 4B: Live Feed
+    scanned = phase_trn_live_feed(trn_code)
+
+    # Phase 4C: Deep Analysis
+    phase_trn_deep_analysis(trn_code, scanned)
+
+    # Wait for user
+    input(f"\n  {S.Y}▸ Press ENTER to proceed to routing configuration...{S.RST}")
+
+    # Phase 5: Routing
+    routing = phase_routing()
+
+    # Phase 6: Bridge
+    phase_bridge()
+    input(f"\n  {S.Y}▸ Press ENTER to proceed to final settlement...{S.RST}")
+
+    # Phase 7: Settlement
+    phase_settlement(routing)
+
+
+# =====================================================================
+# [ ENTRY POINT ]
+# =====================================================================
+if __name__ == "__main__":
+    # Handle CLI flags first (--help, --version)
+    _handle_cli_args()
+
+    try:
+        main()
+    except KeyboardInterrupt:
+        print(f"\n\n  {S.R}[!] Session forcibly terminated.{S.RST}")
+        print(f"  {S.DM}Volatile memory purged. No trace remains.{S.RST}\n")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n  {S.R}[FATAL] System error: {e}{S.RST}")
+        print(f"  {S.DM}Core dump saved. Restart required.{S.RST}\n")
+        sys.exit(1)
