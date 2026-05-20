@@ -483,24 +483,29 @@ def phase_trn_live_feed(trn_input):
     print(f"  {S.DM}  Target: {trn_input} | Scanning 10,000,000+ ledger entries...{S.RST}")
     print()
 
-    # Table header
-    print(f"  {S.DM}┌{'─'*16}┬{'─'*12}┬{'─'*14}┬{'─'*14}┬{'─'*10}┐{S.RST}")
-    print(f"  {S.DM}│{S.BD}{S.W} {'TRN REF':<14} {S.DM}│{S.BD}{S.W} {'TYPE':<10} {S.DM}│{S.BD}{S.W} {'BANK':<12} {S.DM}│{S.BD}{S.W} {'AMOUNT':>12} {S.DM}│{S.BD}{S.W} {'STATUS':<8} {S.DM}│{S.RST}")
-    print(f"  {S.DM}├{'─'*16}┼{'─'*12}┼{'─'*14}┼{'─'*14}┼{'─'*10}┤{S.RST}")
+    # Multi-currency for realism
+    CURRENCIES = ["€", "$", "£", "¥", "CHF", "A$", "S$", "HK$"]
 
-    # Massive scan: simulate 10,000,000+ with counter
+    # Table header
+    print(f"  {S.DM}┌{'─'*16}┬{'─'*12}┬{'─'*14}┬{'─'*16}┬{'─'*10}┐{S.RST}")
+    print(f"  {S.DM}│{S.BD}{S.W} {'TRN REF':<14} {S.DM}│{S.BD}{S.W} {'TYPE':<10} {S.DM}│{S.BD}{S.W} {'BANK':<12} {S.DM}│{S.BD}{S.W} {'AMOUNT':>14} {S.DM}│{S.BD}{S.W} {'STATUS':<8} {S.DM}│{S.RST}")
+    print(f"  {S.DM}├{'─'*16}┼{'─'*12}┼{'─'*14}┼{'─'*16}┼{'─'*10}┤{S.RST}")
+
+    # Massive scan: simulate 10,000,000+ with big jumps
     scanned_trns = []
     scan_counter = 0
     display_count = 0
-    target_display = random.randint(35, 50)  # rows shown on screen
-    # Simulated total scanned count starts high
-    base_scanned = random.randint(9_500_000, 10_500_000)
+    target_display = random.randint(80, 120)  # BANYAK rows
+    base_scanned = random.randint(9_000_000, 9_500_000)
 
     while display_count < target_display:
         entry = generate_trn_entry()
         scanned_trns.append(entry)
-        scan_counter += random.randint(180_000, 350_000)  # jump counter by big amounts
+        scan_counter += random.randint(80_000, 200_000)
         display_count += 1
+
+        # Random currency
+        cur = random.choice(CURRENCIES)
 
         # Color based on status
         status_color = S.G if entry['status'] == "CLEARED" else S.Y if entry['status'] in ("PENDING","SETTLING") else S.C
@@ -509,24 +514,24 @@ def phase_trn_live_feed(trn_input):
             f"  {S.DM}│{S.RST} {S.Y}{entry['trn']:<14}{S.RST} "
             f"{S.DM}│{S.RST} {S.B}{entry['type']:<10}{S.RST} "
             f"{S.DM}│{S.RST} {S.C}{entry['bank']:<12}{S.RST} "
-            f"{S.DM}│{S.RST} {S.W}{entry['amount']:>10,} €{S.RST}  "
+            f"{S.DM}│{S.RST} {S.W}{entry['amount']:>10,} {cur}{S.RST}  "
             f"{S.DM}│{S.RST} {status_color}{entry['status']:<8}{S.RST} {S.DM}│{S.RST}"
         )
         print(row)
 
-        # Scanning loading jeda every 5 rows
-        if display_count % 5 == 0 and display_count < target_display:
+        # Scanning loading jeda every 7 rows
+        if display_count % 7 == 0 and display_count < target_display:
             current_total = base_scanned + scan_counter
-            scanning_animation(f"Batch #{display_count//5} | {current_total:,} scanned", duration=random.uniform(1.0, 1.8))
+            scanning_animation(f"Batch #{display_count//7} | {current_total:,} scanned", duration=random.uniform(1.2, 2.2))
 
-        time.sleep(random.uniform(0.02, 0.06))
+        time.sleep(random.uniform(0.01, 0.04))
 
-    print(f"  {S.DM}└{'─'*16}┴{'─'*12}┴{'─'*14}┴{'─'*14}┴{'─'*10}┘{S.RST}")
+    print(f"  {S.DM}└{'─'*16}┴{'─'*12}┴{'─'*14}┴{'─'*16}┴{'─'*10}┘{S.RST}")
     
     total_scanned = base_scanned + scan_counter
     print()
     print(f"  {S.W}{S.BD}  Total Scanned : {S.G}{total_scanned:,}{S.RST} {S.W}transactions{S.RST}")
-    print(f"  {S.DM}  Throughput: {random.randint(2800,5500)} TPS | Nodes: 6 | Duration: {random.randint(12,28)}s{S.RST}")
+    print(f"  {S.DM}  Throughput: {random.randint(4500,8200)} TPS | Nodes: 6 | Duration: {random.randint(25,55)}s{S.RST}")
     print()
     time.sleep(1)
 
