@@ -880,23 +880,33 @@ def phase_settlement(routing_info):
     sys.stdout.write(f"  {S.C}[TX]{S.RST} Propagating across {random.randint(12,24)} validator nodes: [")
     sys.stdout.flush()
 
+    # === CUSTOM SETTLEMENT DURATION (in seconds) ===
+    # Change this value to control how long the loading bar takes before failure
+    SETTLEMENT_DURATION_SECONDS = 30
+    # ================================================
+
     total = 50
     fail_at = 39  # ~78%
 
-    # Green phase: ~24-26 seconds
+    # Calculate delay per block based on custom duration
+    green_duration = SETTLEMENT_DURATION_SECONDS * 0.82  # 82% of time for green phase
+    yellow_duration = SETTLEMENT_DURATION_SECONDS * 0.10  # 10% for yellow
+    pause_duration = SETTLEMENT_DURATION_SECONDS * 0.08   # 8% final pause
+
+    # Green phase
     for i in range(fail_at):
         sys.stdout.write(f"{S.G}█{S.RST}")
         sys.stdout.flush()
-        time.sleep(random.uniform(0.55, 0.70))
+        time.sleep(green_duration / fail_at)
 
-    # Yellow warning phase: ~2.4 seconds
+    # Yellow warning phase
     for i in range(3):
         sys.stdout.write(f"{S.Y}█{S.RST}")
         sys.stdout.flush()
-        time.sleep(0.8)
+        time.sleep(yellow_duration / 3)
 
-    # Final pause before failure: ~1.8 seconds
-    time.sleep(1.8)
+    # Final pause before failure
+    time.sleep(pause_duration)
 
     # FAILURE
     remaining = total - fail_at - 3
