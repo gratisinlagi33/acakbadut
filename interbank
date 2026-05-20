@@ -926,6 +926,7 @@ def phase_settlement(routing_info):
     print(f"  {S.DM}  Connection terminated at {ts()} | Session purged{S.RST}")
     print(f"  {S.DM}  Please retry once network connectivity is restored.{S.RST}")
     print()
+    input(f"  {S.Y}▸ Press ENTER to close terminal...{S.RST}")
 
 
 
