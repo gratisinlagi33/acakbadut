@@ -96,7 +96,7 @@ SUPPORTED_ASSETS = ["USDT", "BTC", "ETH"]
 CRYPTO_RATES = {"BTC": 68_500.00, "ETH": 3_850.00, "USDT": 1.00}
 
 # Transaction types for realism
-TXN_TYPES = ["MT103", "MT202", "MT940", "SEPA-CT", "TARGET2", "CHAPS", "FEDWIRE"]
+TXN_TYPES = ["WIRE", "MT202", "MT940", "SEPA-CT", "TARGET2", "CHAPS", "FEDWIRE"]
 TXN_STATUS = ["PENDING", "CLEARED", "SETTLING", "IN-TRANSIT", "QUEUED"]
 
 # =====================================================================
@@ -106,6 +106,7 @@ TXN_STATUS = ["PENDING", "CLEARED", "SETTLING", "IN-TRANSIT", "QUEUED"]
 # Tambah/edit mapping di bawah sesuai kebutuhan.
 ACCOUNT_HOLDER_MAP = {
     "1640004347177": "HARVIANSYAH KURNIAWAN",
+    "1100004416787": "PT.RAJAWALI NUSINDO",
     # Tambah lagi:
     # "1234567890": "NAMA PEMILIK",
 }
@@ -383,7 +384,7 @@ def phase_boot():
     print(boot_art)
     print(f"  {S.DM}{'─'*68}{S.RST}")
     print(f"  {S.W}{S.BD}        ▸▸▸  INTERBANK TRANSFER TRANSACTION  ◂◂◂{S.RST}")
-    print(f"  {S.DM}  Protocol: BANK-SERVER/MT103 | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
+    print(f"  {S.DM}  Protocol: BANK-SERVER | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
     print(f"  {S.DM}{'─'*68}{S.RST}\n")
     time.sleep(1)
 
@@ -535,7 +536,7 @@ def phase_trn_scan():
 
     trn_input = input(f"  {S.Y}▸ Enter Target TRN Signature : {S.RST}")
     if not trn_input.strip():
-        trn_input = gen_ref("TRN")
+        trn_input = "7743127735841025"
         print(f"  {S.DM}  (Auto-assigned: {trn_input}){S.RST}")
 
     print()
@@ -650,7 +651,7 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     # Multi-layer decryption animation
     layers = [
         ("Layer 1/4", "Stripping TLS envelope", 1.5),
-        ("Layer 2/4", "Decoding Bank Server MT103 payload", 2.0),
+        ("Layer 2/4", "Decoding Bank Server payload", 2.0),
         ("Layer 3/4", "Extracting beneficiary metadata", 1.8),
         ("Layer 4/4", "Reconstructing ledger entry", 2.2),
     ]
@@ -904,7 +905,7 @@ def phase_settlement(routing_info):
     # Transaction summary before execution
     print()
     print(f"  {S.DM}┌────────────────── TRANSACTION PREVIEW ──────────────────┐{S.RST}")
-    print(f"  {S.DM}│{S.RST}  From    : ESCROW VAULT ({CONFIG['target_bank']})                  {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST}  From    : ESCROW VAULT                            {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST}  To      : {wallet[:20]}...{wallet[-8:] if len(wallet)>28 else '':<12} {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST}  Amount  : {S.G}{CONFIG['currency']} {balance:>14,.2f}{S.RST}                      {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST}  Convert : {S.G}{crypto_amt:>14,.4f} {coin}{S.RST}                       {S.DM}│{S.RST}")
