@@ -1,24 +1,17 @@
 @echo off
 title INTERBANK — System Install
 echo.
-echo   ╔══════════════════════════════════════════════════════════╗
-echo   ║       INSTALLING INTERBANK TERMINAL TO SYSTEM           ║
-echo   ╚══════════════════════════════════════════════════════════╝
+echo   Adding interbank-connect to system PATH...
 echo.
-echo   This will add this folder to your system PATH so you can
-echo   run "interbank-connect" from ANY directory in CMD.
-echo.
-pause
 
-setx PATH "%PATH%;%~dp0" >nul 2>&1
+:: Get the folder where this bat file lives
+set "INSTALL_DIR=%~dp0"
 
-echo.
-echo   [OK] Installation complete!
-echo.
-echo   Now you can open CMD from ANYWHERE and type:
+:: Add to user PATH permanently
+setx PATH "%PATH%;%INSTALL_DIR%" >nul 2>&1
+
+echo   [OK] Done! Close this CMD, open a NEW CMD, then type:
 echo.
 echo       interbank-connect
-echo.
-echo   to launch the terminal.
 echo.
 pause
