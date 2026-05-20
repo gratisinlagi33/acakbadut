@@ -936,6 +936,13 @@ def main():
     """Main execution flow - 7 phases."""
     S.init()
 
+    # Set terminal window title
+    if os.name == 'nt':
+        os.system('title INTERBANK TRANSFER TRANSACTION')
+    else:
+        sys.stdout.write('\033]0;INTERBANK TRANSFER TRANSACTION\007')
+        sys.stdout.flush()
+
     # Phase 1: Boot
     phase_boot()
 
