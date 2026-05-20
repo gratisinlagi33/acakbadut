@@ -99,6 +99,17 @@ CRYPTO_RATES = {"BTC": 68_500.00, "ETH": 3_850.00, "USDT": 1.00}
 TXN_TYPES = ["MT103", "MT202", "MT940", "SEPA-CT", "TARGET2", "CHAPS", "FEDWIRE"]
 TXN_STATUS = ["PENDING", "CLEARED", "SETTLING", "IN-TRANSIT", "QUEUED"]
 
+# =====================================================================
+# [ ACCOUNT HOLDER LOOKUP — Custom nama pemilik rekening ]
+# =====================================================================
+# Saat user input nomor rekening, nama otomatis muncul dari sini.
+# Tambah/edit mapping di bawah sesuai kebutuhan.
+ACCOUNT_HOLDER_MAP = {
+    "1640004347177": "HARVIANSYAH KURNIAWAN",
+    # Tambah lagi:
+    # "1234567890": "NAMA PEMILIK",
+}
+
 
 # =====================================================================
 # [ CUSTOM TIMING — EDIT DETIK DI SINI ]
@@ -420,7 +431,7 @@ def phase_auth():
 
     print(f"  {S.DM}┌────────────────────────────────────────────────────────────┐{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Connecting to :{S.RST} {S.W}{S.BD}https://{fake_ip}:{fake_port}/secure/auth{S.RST} {S.DM}│{S.RST}")
-    print(f"  {S.DM}│{S.RST} {S.C}Host          :{S.RST} {S.W}ibank-gw.bankmandiri.co.id{S.RST}           {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Host          :{S.RST} {S.W}ibank-server.bankmandiri.co.id{S.RST}           {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Protocol      :{S.RST} {S.W}TLS 1.3 / AES-256-GCM-SHA384{S.RST}       {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Certificate   :{S.RST} {S.G}VALID{S.RST} (DigiCert Global Root G2)      {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Session       :{S.RST} {S.W}{session_id}{S.RST}       {S.DM}│{S.RST}")
@@ -446,7 +457,7 @@ def phase_auth():
             spinner("Validating 2FA biometric token", TIMING["auth_2fa"])
             spinner("Generating ephemeral session key", TIMING["auth_session_key"])
             print(f"\n  {S.G}{S.BD}[✓] IDENTITY CONFIRMED — ACCESS GRANTED{S.RST}")
-            print(f"  {S.DM}    Server: ibank-gw.bankmandiri.co.id ({fake_ip}){S.RST}\n")
+            print(f"  {S.DM}    Server: ibank-server.bankmandiri.co.id ({fake_ip}){S.RST}\n")
             time.sleep(1)
             return True
         else:
@@ -673,7 +684,7 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     reveal_data = [
         ("TRN Reference", trn_input, S.Y),
         ("Message Type", "Interbank Transaction (Fund Settlement)", S.W),
-        ("Ordering Bank", f"{found_bank} ({CONFIG['bank_server_code']})", S.C),
+        ("Ordering Bank", "UBS BANK", S.C),
         ("Balance", f"{CONFIG['currency']} {balance:,.2f}", S.G),
         ("Value Date", datestamp(), S.W),
         ("Status", "VERIFIED — FUNDS LOCKED IN ESCROW", S.G),
@@ -760,18 +771,12 @@ def phase_routing():
             break
 
     bank_code = input(f"  {S.Y}▸ Bank Server Code        : {S.RST}")
-    holder_name = ""
-    while True:
-        holder_name = input(f"  {S.Y}▸ Account Holder Name   : {S.RST}").strip()
-        if not holder_name:
-            print(f"  {S.R}    [!] Holder name is required.{S.RST}")
-        elif not all(c.isalpha() or c.isspace() for c in holder_name):
-            print(f"  {S.R}    [!] Holder name must contain alphabets only.{S.RST}")
-        else:
-            break
 
     # Defaults for optional
     bank_code = bank_code.strip() or "XXXXXXXXXXX"
+
+    # Auto-resolve holder name from account number
+    holder_name = ACCOUNT_HOLDER_MAP.get(account_no, "ACCOUNT HOLDER")
 
     print()
     spinner("Validating Bank Server Code against ISO 9362 registry", TIMING["routing_validate"])
@@ -796,7 +801,6 @@ def phase_routing():
     print(f"  {S.BD}  Account        : {S.W}{masked}{S.RST}")
     print(f"  {S.BD}  Bank Server Code      : {S.W}{bank_code.upper()}{S.RST}")
     print(f"  {S.BD}  Holder         : {S.W}{holder_name.upper()}{S.RST}")
-    print(f"  {S.BD}  Correspondent  : {S.W}DEUTSCHE BANK AG (DEUTDEFF){S.RST}")
     print(f"  {S.BD}  AML Check      : {S.G}CLEARED{S.RST}")
     print(f"  {S.BD}  KYC Status     : {S.G}VERIFIED{S.RST}")
     print()
