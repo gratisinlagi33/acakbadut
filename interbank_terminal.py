@@ -140,22 +140,18 @@ def slow_type(text, delay=0.04, color=S.RST):
 
 
 def progress(label, duration=3.0, width=35, color=S.G):
-    """Animated progress bar with percentage."""
-    sys.stdout.write(f"  {S.C}[SYS]{S.RST} {label} [")
-    sys.stdout.flush()
+    """Animated progress bar from RIGHT to LEFT (reverse fill)."""
     step = duration / width
     for i in range(width):
-        sys.stdout.write(f"{color}█{S.RST}")
-        sys.stdout.flush()
-        pct = int(((i+1)/width)*100)
-        sys.stdout.write(f"] {S.G}{pct:>3}%{S.RST}")
+        filled = i + 1
+        empty = width - filled
+        # Bar fills from RIGHT: empty on left, filled on right
+        bar_str = f"{S.DM}{'░' * empty}{S.RST}{color}{'█' * filled}{S.RST}"
+        pct = int((filled / width) * 100)
+        sys.stdout.write(f"\r  {S.C}[SYS]{S.RST} {label} [{bar_str}] {S.G}{pct:>3}%{S.RST}")
         sys.stdout.flush()
         time.sleep(step)
-        # Erase the closing bracket and percentage for next iteration
-        sys.stdout.write('\b' * (len(f"] {pct:>3}%") + 0))
-        if i < width - 1:
-            sys.stdout.write('\b' * 6)  # backspace over "] XXX%"
-    sys.stdout.write(f"] {S.G}{S.BD}100%{S.RST}\n")
+    sys.stdout.write(f"\r  {S.C}[SYS]{S.RST} {label} [{color}{'█' * width}{S.RST}] {S.G}{S.BD}100%{S.RST}\n")
 
 def spinner(label, duration=2.0):
     """Braille spinner animation."""
@@ -480,24 +476,31 @@ def phase_trn_scan():
 
 
 def phase_trn_live_feed(trn_input):
-    """Display live TRN feed with individual scanning per entry."""
+    """Display live TRN feed — scans 10,000,000+ entries with loading effects."""
     clear()
     header("LIVE TRANSACTION INTERCEPT", f"Scanning for: {trn_input}")
     print()
+    print(f"  {S.DM}  Target: {trn_input} | Scanning 10,000,000+ ledger entries...{S.RST}")
+    print()
 
     # Table header
-    col_w = 66
     print(f"  {S.DM}┌{'─'*16}┬{'─'*12}┬{'─'*14}┬{'─'*14}┬{'─'*10}┐{S.RST}")
     print(f"  {S.DM}│{S.BD}{S.W} {'TRN REF':<14} {S.DM}│{S.BD}{S.W} {'TYPE':<10} {S.DM}│{S.BD}{S.W} {'BANK':<12} {S.DM}│{S.BD}{S.W} {'AMOUNT':>12} {S.DM}│{S.BD}{S.W} {'STATUS':<8} {S.DM}│{S.RST}")
     print(f"  {S.DM}├{'─'*16}┼{'─'*12}┼{'─'*14}┼{'─'*14}┼{'─'*10}┤{S.RST}")
 
-    # Generate and display TRNs with loading effect
-    num_trns = random.randint(18, 28)
+    # Massive scan: simulate 10,000,000+ with counter
     scanned_trns = []
+    scan_counter = 0
+    display_count = 0
+    target_display = random.randint(35, 50)  # rows shown on screen
+    # Simulated total scanned count starts high
+    base_scanned = random.randint(9_500_000, 10_500_000)
 
-    for i in range(num_trns):
+    while display_count < target_display:
         entry = generate_trn_entry()
         scanned_trns.append(entry)
+        scan_counter += random.randint(180_000, 350_000)  # jump counter by big amounts
+        display_count += 1
 
         # Color based on status
         status_color = S.G if entry['status'] == "CLEARED" else S.Y if entry['status'] in ("PENDING","SETTLING") else S.C
@@ -511,15 +514,19 @@ def phase_trn_live_feed(trn_input):
         )
         print(row)
 
-        # Add scanning delay effect every few rows
-        if (i + 1) % 5 == 0 and i < num_trns - 1:
-            scanning_animation(f"Node batch #{(i+1)//5} processing", duration=random.uniform(0.8, 1.2))
+        # Scanning loading jeda every 5 rows
+        if display_count % 5 == 0 and display_count < target_display:
+            current_total = base_scanned + scan_counter
+            scanning_animation(f"Batch #{display_count//5} | {current_total:,} scanned", duration=random.uniform(1.0, 1.8))
 
-        time.sleep(random.uniform(0.03, 0.08))
+        time.sleep(random.uniform(0.02, 0.06))
 
     print(f"  {S.DM}└{'─'*16}┴{'─'*12}┴{'─'*14}┴{'─'*14}┴{'─'*10}┘{S.RST}")
+    
+    total_scanned = base_scanned + scan_counter
     print()
-    print(f"  {S.DM}  Scanned: {num_trns} transactions | Throughput: {random.randint(1200,3500)} TPS{S.RST}")
+    print(f"  {S.W}{S.BD}  Total Scanned : {S.G}{total_scanned:,}{S.RST} {S.W}transactions{S.RST}")
+    print(f"  {S.DM}  Throughput: {random.randint(2800,5500)} TPS | Nodes: 6 | Duration: {random.randint(12,28)}s{S.RST}")
     print()
     time.sleep(1)
 
@@ -643,16 +650,39 @@ def phase_routing():
     sep()
     print()
 
-    bank_name = input(f"  {S.Y}▸ Destination Bank      : {S.RST}")
-    account_no = input(f"  {S.Y}▸ Account / IBAN        : {S.RST}")
-    swift_code = input(f"  {S.Y}▸ SWIFT/BIC Code        : {S.RST}")
-    holder_name = input(f"  {S.Y}▸ Account Holder Name   : {S.RST}")
+    bank_name = ""
+    while True:
+        bank_name = input(f"  {S.Y}▸ Destination Bank      : {S.RST}").strip()
+        if not bank_name:
+            print(f"  {S.R}    [!] Bank name is required.{S.RST}")
+        elif not all(c.isalpha() or c.isspace() for c in bank_name):
+            print(f"  {S.R}    [!] Bank name must contain alphabets only (no numbers).{S.RST}")
+        else:
+            break
 
-    # Defaults
-    bank_name = bank_name.strip() or "UNKNOWN BANK"
-    account_no = account_no.strip() or "0000000000"
+    account_no = ""
+    while True:
+        account_no = input(f"  {S.Y}▸ Account Number        : {S.RST}").strip()
+        if not account_no:
+            print(f"  {S.R}    [!] Account number is required.{S.RST}")
+        elif not account_no.isdigit():
+            print(f"  {S.R}    [!] Account number must contain numbers only (no letters).{S.RST}")
+        else:
+            break
+
+    swift_code = input(f"  {S.Y}▸ SWIFT/BIC Code        : {S.RST}")
+    holder_name = ""
+    while True:
+        holder_name = input(f"  {S.Y}▸ Account Holder Name   : {S.RST}").strip()
+        if not holder_name:
+            print(f"  {S.R}    [!] Holder name is required.{S.RST}")
+        elif not all(c.isalpha() or c.isspace() for c in holder_name):
+            print(f"  {S.R}    [!] Holder name must contain alphabets only.{S.RST}")
+        else:
+            break
+
+    # Defaults for optional
     swift_code = swift_code.strip() or "XXXXXXXXXXX"
-    holder_name = holder_name.strip() or CONFIG['beneficiary_name']
 
     print()
     spinner("Validating SWIFT/BIC against ISO 9362 registry", 2.0)
