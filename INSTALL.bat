@@ -10,7 +10,6 @@ echo   run "interbank-connect" from ANY directory in CMD.
 echo.
 pause
 
-:: Add current directory to user PATH
 setx PATH "%PATH%;%~dp0" >nul 2>&1
 
 echo.
