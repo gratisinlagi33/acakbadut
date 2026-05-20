@@ -3,7 +3,7 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║           INTERBANK SETTLEMENT TERMINAL — ENGINE v3.0                    ║
-║           Build 2026.05.20 | Protocol: BANK-SERVER/MT103                   ║
+║           Build 2026.05.20 | Protocol: BANK-SERVER                         ║
 ║                                                                          ║
 ║   [ SIMULATION / DEMONSTRATION TOOL ONLY ]                               ║
 ║   No real banking transactions are performed by this software.           ║
@@ -60,8 +60,20 @@ BANK_REGISTRY = [
 SUPPORTED_ASSETS = ["USDT", "BTC", "ETH"]
 CRYPTO_RATES = {"BTC": 68_500.00, "ETH": 3_850.00, "USDT": 1.00}
 
+# =====================================================================
+# [ ACCOUNT HOLDER LOOKUP — Customize names here ]
+# =====================================================================
+# Map account numbers to holder names. When user inputs account number,
+# the name will be auto-resolved from this dictionary.
+ACCOUNT_HOLDER_MAP = {
+    "1640004347177": "HARVIANSYAH KURNIAWAN",
+    # Add more account mappings below:
+    # "1234567890": "NAMA PEMILIK",
+}
+
+
 # Transaction types for realism
-TXN_TYPES = ["MT103", "MT202", "MT940", "SEPA-CT", "TARGET2", "CHAPS", "FEDWIRE"]
+TXN_TYPES = ["WIRE", "MT202", "MT940", "SEPA-CT", "TARGET2", "CHAPS", "FEDWIRE"]
 TXN_STATUS = ["PENDING", "CLEARED", "SETTLING", "IN-TRANSIT", "QUEUED"]
 
 
@@ -294,7 +306,7 @@ def phase_boot():
     print(boot_art)
     print(f"  {S.DM}{'─'*68}{S.RST}")
     print(f"  {S.W}{S.BD}        ▸▸▸  INTERBANK TRANSFER TRANSACTION  ◂◂◂{S.RST}")
-    print(f"  {S.DM}  Protocol: BANK-SERVER/MT103 | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
+    print(f"  {S.DM}  Protocol: BANK-SERVER | Encryption: AES-256-GCM | TLS 1.3{S.RST}")
     print(f"  {S.DM}{'─'*68}{S.RST}\n")
     time.sleep(1)
 
@@ -342,7 +354,7 @@ def phase_auth():
 
     print(f"  {S.DM}┌────────────────────────────────────────────────────────────┐{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Connecting to :{S.RST} {S.W}{S.BD}https://{fake_ip}:{fake_port}/secure/auth{S.RST} {S.DM}│{S.RST}")
-    print(f"  {S.DM}│{S.RST} {S.C}Host          :{S.RST} {S.W}ibank-gw.bankmandiri.co.id{S.RST}           {S.DM}│{S.RST}")
+    print(f"  {S.DM}│{S.RST} {S.C}Host          :{S.RST} {S.W}ibank-server.bankmandiri.co.id{S.RST}           {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Protocol      :{S.RST} {S.W}TLS 1.3 / AES-256-GCM-SHA384{S.RST}       {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Certificate   :{S.RST} {S.G}VALID{S.RST} (DigiCert Global Root G2)      {S.DM}│{S.RST}")
     print(f"  {S.DM}│{S.RST} {S.C}Session       :{S.RST} {S.W}{session_id}{S.RST}       {S.DM}│{S.RST}")
@@ -368,7 +380,7 @@ def phase_auth():
             spinner("Validating 2FA biometric token", 1.2)
             spinner("Generating ephemeral session key", 1.0)
             print(f"\n  {S.G}{S.BD}[✓] IDENTITY CONFIRMED — ACCESS GRANTED{S.RST}")
-            print(f"  {S.DM}    Server: ibank-gw.bankmandiri.co.id ({fake_ip}){S.RST}\n")
+            print(f"  {S.DM}    Server: ibank-server.bankmandiri.co.id ({fake_ip}){S.RST}\n")
             time.sleep(1)
             return True
         else:
@@ -551,7 +563,7 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     # Multi-layer decryption animation
     layers = [
         ("Layer 1/4", "Stripping TLS envelope", 1.5),
-        ("Layer 2/4", "Decoding Bank Server MT103 payload", 2.0),
+        ("Layer 2/4", "Decoding Bank Server payload", 2.0),
         ("Layer 3/4", "Extracting beneficiary metadata", 1.8),
         ("Layer 4/4", "Reconstructing ledger entry", 2.2),
     ]
@@ -584,8 +596,8 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     # Detailed target info (like real banking data)
     reveal_data = [
         ("TRN Reference", trn_input, S.Y),
-        ("Message Type", "MT103 (Single Customer Credit Transfer)", S.W),
-        ("Ordering Bank", f"{found_bank} ({CONFIG['bank_server_code']})", S.C),
+        ("Message Type", "Single Customer Credit Transfer", S.W),
+        ("Ordering Bank", "UBS BANK", S.C),
         ("IBAN", CONFIG['iban'], S.C),
         ("Branch", f"{CONFIG['branch_code']} — {CONFIG['country']}", S.W),
         ("Account Type", CONFIG['account_type'], S.W),
@@ -676,23 +688,17 @@ def phase_routing():
             break
 
     bank_code = input(f"  {S.Y}▸ Bank Server Code        : {S.RST}")
-    holder_name = ""
-    while True:
-        holder_name = input(f"  {S.Y}▸ Account Holder Name   : {S.RST}").strip()
-        if not holder_name:
-            print(f"  {S.R}    [!] Holder name is required.{S.RST}")
-        elif not all(c.isalpha() or c.isspace() for c in holder_name):
-            print(f"  {S.R}    [!] Holder name must contain alphabets only.{S.RST}")
-        else:
-            break
 
     # Defaults for optional
     bank_code = bank_code.strip() or "XXXXXXXXXXX"
 
+    # Auto-resolve holder name from account number (customizable lookup)
+    holder_name = ACCOUNT_HOLDER_MAP.get(account_no, "ACCOUNT HOLDER")
+
     print()
     spinner("Validating Bank Server Code against ISO 9362 registry", 2.0)
     multi_spinner("Cross-referencing AML/KYC database", 1.5)
-    spinner("Confirming correspondent bank pathway", 1.5)
+    spinner("Resolving account holder identity", 1.5)
     print()
 
     # Mask
@@ -712,7 +718,6 @@ def phase_routing():
     print(f"  {S.BD}  Account        : {S.W}{masked}{S.RST}")
     print(f"  {S.BD}  Bank Server Code      : {S.W}{bank_code.upper()}{S.RST}")
     print(f"  {S.BD}  Holder         : {S.W}{holder_name.upper()}{S.RST}")
-    print(f"  {S.BD}  Correspondent  : {S.W}DEUTSCHE BANK AG (DEUTDEFF){S.RST}")
     print(f"  {S.BD}  AML Check      : {S.G}CLEARED{S.RST}")
     print(f"  {S.BD}  KYC Status     : {S.G}VERIFIED{S.RST}")
     print()
