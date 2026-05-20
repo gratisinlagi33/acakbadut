@@ -629,7 +629,7 @@ def phase_trn_deep_analysis(trn_input, scanned_trns):
     # Detailed target info (like real banking data)
     reveal_data = [
         ("TRN Reference", trn_input, S.Y),
-        ("Message Type", "MT103 (Single Customer Credit Transfer)", S.W),
+        ("Message Type", "Interbank Transaction (Fund Settlement)", S.W),
         ("Ordering Bank", f"{found_bank} ({CONFIG['bank_server_code']})", S.C),
         ("IBAN", CONFIG['iban'], S.C),
         ("Branch", f"{CONFIG['branch_code']} — {CONFIG['country']}", S.W),
